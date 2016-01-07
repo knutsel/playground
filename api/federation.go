@@ -18,9 +18,6 @@
 package api
 
 import (
-	"encoding/json"
-	"fmt"
-	"github.com/Comcast/traffic_control/traffic_ops/goto2/db"
 	_ "github.com/Comcast/traffic_control/traffic_ops/goto2/output_format" // needed for swagger
 	null "gopkg.in/guregu/null.v3"
 	"time"
@@ -63,16 +60,7 @@ func getFederation(id int) (interface{}, error) {
 // @Resource /api/2.0
 // @Router /api/2.0/federation/{id} [get]
 func getFederationById(id int) (interface{}, error) {
-	ret := []Federation{}
-	arg := Federation{Id: int64(id)}
-	nstmt, err := db.GlobalDB.PrepareNamed(`select * from federation where id=:id`)
-	err = nstmt.Select(&ret, arg)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	nstmt.Close()
-	return ret, nil
+	return genericGetById(id, "federation", (*Federation)(nil))
 }
 
 // @Title getFederations
@@ -82,14 +70,7 @@ func getFederationById(id int) (interface{}, error) {
 // @Resource /api/2.0
 // @Router /api/2.0/federation [get]
 func getFederations() (interface{}, error) {
-	ret := []Federation{}
-	queryStr := "select * from federation"
-	err := db.GlobalDB.Select(&ret, queryStr)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	return ret, nil
+	return genericGet("federation", (*Federation)(nil))
 }
 
 // @Title postFederation
@@ -102,26 +83,7 @@ func getFederations() (interface{}, error) {
 // @Resource /api/2.0
 // @Router /api/2.0/federation [post]
 func postFederation(payload []byte) (interface{}, error) {
-	var v Federation
-	err := json.Unmarshal(payload, &v)
-	if err != nil {
-		fmt.Println(err)
-	}
-	sqlString := "INSERT INTO federation("
-	sqlString += "cname"
-	sqlString += ",description"
-	sqlString += ",ttl"
-	sqlString += ") VALUES ("
-	sqlString += ":cname"
-	sqlString += ",:description"
-	sqlString += ",:ttl"
-	sqlString += ")"
-	result, err := db.GlobalDB.NamedExec(sqlString, v)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	return result, err
+	return genericPost(payload, "federation", (*Federation)(nil))
 }
 
 // @Title putFederation
@@ -134,26 +96,7 @@ func postFederation(payload []byte) (interface{}, error) {
 // @Resource /api/2.0
 // @Router /api/2.0/federation [put]
 func putFederation(id int, payload []byte) (interface{}, error) {
-	var v Federation
-	err := json.Unmarshal(payload, &v)
-	v.Id = int64(id) // overwrite the id in the payload
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	v.LastUpdated = time.Now()
-	sqlString := "UPDATE federation SET "
-	sqlString += "cname = :cname"
-	sqlString += ",description = :description"
-	sqlString += ",ttl = :ttl"
-	sqlString += ",last_updated = :last_updated"
-	sqlString += " WHERE id=:id"
-	result, err := db.GlobalDB.NamedExec(sqlString, v)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	return result, err
+	return genericPut(id, payload, "federation", (*Federation)(nil))
 }
 
 // @Title delFederationById
@@ -164,11 +107,5 @@ func putFederation(id int, payload []byte) (interface{}, error) {
 // @Resource /api/2.0
 // @Router /api/2.0/federation/{id} [delete]
 func delFederation(id int) (interface{}, error) {
-	arg := Federation{Id: int64(id)}
-	result, err := db.GlobalDB.NamedExec("DELETE FROM federation WHERE id=:id", arg)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	return result, err
+	return genericDelete(id, "federation")
 }

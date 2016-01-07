@@ -18,9 +18,6 @@
 package api
 
 import (
-	"encoding/json"
-	"fmt"
-	"github.com/Comcast/traffic_control/traffic_ops/goto2/db"
 	_ "github.com/Comcast/traffic_control/traffic_ops/goto2/output_format" // needed for swagger
 	null "gopkg.in/guregu/null.v3"
 	"time"
@@ -47,7 +44,7 @@ type Server struct {
 	Status         int64       `db:"status" json:"status"`
 	UpdPending     int64       `db:"upd_pending" json:"updPending"`
 	Profile        int64       `db:"profile" json:"profile"`
-	CdnId          int64       `db:"cdn_id" json:"cdnId"`
+	CdnId          null.Int    `db:"cdn_id" json:"cdnId"`
 	MgmtIpAddress  null.String `db:"mgmt_ip_address" json:"mgmtIpAddress"`
 	MgmtIpNetmask  null.String `db:"mgmt_ip_netmask" json:"mgmtIpNetmask"`
 	MgmtIpGateway  null.String `db:"mgmt_ip_gateway" json:"mgmtIpGateway"`
@@ -90,16 +87,7 @@ func getServer(id int) (interface{}, error) {
 // @Resource /api/2.0
 // @Router /api/2.0/server/{id} [get]
 func getServerById(id int) (interface{}, error) {
-	ret := []Server{}
-	arg := Server{Id: int64(id)}
-	nstmt, err := db.GlobalDB.PrepareNamed(`select * from server where id=:id`)
-	err = nstmt.Select(&ret, arg)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	nstmt.Close()
-	return ret, nil
+	return genericGetById(id, "server", (*Server)(nil))
 }
 
 // @Title getServers
@@ -109,14 +97,7 @@ func getServerById(id int) (interface{}, error) {
 // @Resource /api/2.0
 // @Router /api/2.0/server [get]
 func getServers() (interface{}, error) {
-	ret := []Server{}
-	queryStr := "select * from server"
-	err := db.GlobalDB.Select(&ret, queryStr)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	return ret, nil
+	return genericGet("server", (*Server)(nil))
 }
 
 // @Title postServer
@@ -141,7 +122,7 @@ func getServers() (interface{}, error) {
 // @Param               Status json      int64   false "status description"
 // @Param           UpdPending json      int64   false "upd_pending description"
 // @Param              Profile json      int64   false "profile description"
-// @Param                CdnId json      int64   false "cdn_id description"
+// @Param                CdnId json        int    true "cdn_id description"
 // @Param        MgmtIpAddress json     string    true "mgmt_ip_address description"
 // @Param        MgmtIpNetmask json     string    true "mgmt_ip_netmask description"
 // @Param        MgmtIpGateway json     string    true "mgmt_ip_gateway description"
@@ -156,80 +137,7 @@ func getServers() (interface{}, error) {
 // @Resource /api/2.0
 // @Router /api/2.0/server [post]
 func postServer(payload []byte) (interface{}, error) {
-	var v Server
-	err := json.Unmarshal(payload, &v)
-	if err != nil {
-		fmt.Println(err)
-	}
-	sqlString := "INSERT INTO server("
-	sqlString += "host_name"
-	sqlString += ",domain_name"
-	sqlString += ",tcp_port"
-	sqlString += ",xmpp_id"
-	sqlString += ",xmpp_passwd"
-	sqlString += ",interface_name"
-	sqlString += ",ip_address"
-	sqlString += ",ip_netmask"
-	sqlString += ",ip_gateway"
-	sqlString += ",ip6_address"
-	sqlString += ",ip6_gateway"
-	sqlString += ",interface_mtu"
-	sqlString += ",phys_location"
-	sqlString += ",rack"
-	sqlString += ",cachegroup"
-	sqlString += ",type"
-	sqlString += ",status"
-	sqlString += ",upd_pending"
-	sqlString += ",profile"
-	sqlString += ",cdn_id"
-	sqlString += ",mgmt_ip_address"
-	sqlString += ",mgmt_ip_netmask"
-	sqlString += ",mgmt_ip_gateway"
-	sqlString += ",ilo_ip_address"
-	sqlString += ",ilo_ip_netmask"
-	sqlString += ",ilo_ip_gateway"
-	sqlString += ",ilo_username"
-	sqlString += ",ilo_password"
-	sqlString += ",router_host_name"
-	sqlString += ",router_port_name"
-	sqlString += ") VALUES ("
-	sqlString += ":host_name"
-	sqlString += ",:domain_name"
-	sqlString += ",:tcp_port"
-	sqlString += ",:xmpp_id"
-	sqlString += ",:xmpp_passwd"
-	sqlString += ",:interface_name"
-	sqlString += ",:ip_address"
-	sqlString += ",:ip_netmask"
-	sqlString += ",:ip_gateway"
-	sqlString += ",:ip6_address"
-	sqlString += ",:ip6_gateway"
-	sqlString += ",:interface_mtu"
-	sqlString += ",:phys_location"
-	sqlString += ",:rack"
-	sqlString += ",:cachegroup"
-	sqlString += ",:type"
-	sqlString += ",:status"
-	sqlString += ",:upd_pending"
-	sqlString += ",:profile"
-	sqlString += ",:cdn_id"
-	sqlString += ",:mgmt_ip_address"
-	sqlString += ",:mgmt_ip_netmask"
-	sqlString += ",:mgmt_ip_gateway"
-	sqlString += ",:ilo_ip_address"
-	sqlString += ",:ilo_ip_netmask"
-	sqlString += ",:ilo_ip_gateway"
-	sqlString += ",:ilo_username"
-	sqlString += ",:ilo_password"
-	sqlString += ",:router_host_name"
-	sqlString += ",:router_port_name"
-	sqlString += ")"
-	result, err := db.GlobalDB.NamedExec(sqlString, v)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	return result, err
+	return genericPost(payload, "server", (*Server)(nil))
 }
 
 // @Title putServer
@@ -237,85 +145,39 @@ func postServer(payload []byte) (interface{}, error) {
 // @Accept  application/json
 // @Param             HostName json     string   false "host_name description"
 // @Param           DomainName json     string   false "domain_name description"
-// @Param              TcpPort json   null.Int    true "tcp_port description"
-// @Param               XmppId json null.String    true "xmpp_id description"
-// @Param           XmppPasswd json null.String    true "xmpp_passwd description"
+// @Param              TcpPort json        int    true "tcp_port description"
+// @Param               XmppId json     string    true "xmpp_id description"
+// @Param           XmppPasswd json     string    true "xmpp_passwd description"
 // @Param        InterfaceName json     string   false "interface_name description"
 // @Param            IpAddress json     string   false "ip_address description"
 // @Param            IpNetmask json     string   false "ip_netmask description"
 // @Param            IpGateway json     string   false "ip_gateway description"
-// @Param           Ip6Address json null.String    true "ip6_address description"
-// @Param           Ip6Gateway json null.String    true "ip6_gateway description"
+// @Param           Ip6Address json     string    true "ip6_address description"
+// @Param           Ip6Gateway json     string    true "ip6_gateway description"
 // @Param         InterfaceMtu json      int64   false "interface_mtu description"
 // @Param         PhysLocation json      int64   false "phys_location description"
-// @Param                 Rack json null.String    true "rack description"
+// @Param                 Rack json     string    true "rack description"
 // @Param           Cachegroup json      int64   false "cachegroup description"
 // @Param                 Type json      int64   false "type description"
 // @Param               Status json      int64   false "status description"
 // @Param           UpdPending json      int64   false "upd_pending description"
 // @Param              Profile json      int64   false "profile description"
-// @Param                CdnId json      int64   false "cdn_id description"
-// @Param        MgmtIpAddress json null.String    true "mgmt_ip_address description"
-// @Param        MgmtIpNetmask json null.String    true "mgmt_ip_netmask description"
-// @Param        MgmtIpGateway json null.String    true "mgmt_ip_gateway description"
-// @Param         IloIpAddress json null.String    true "ilo_ip_address description"
-// @Param         IloIpNetmask json null.String    true "ilo_ip_netmask description"
-// @Param         IloIpGateway json null.String    true "ilo_ip_gateway description"
-// @Param          IloUsername json null.String    true "ilo_username description"
-// @Param          IloPassword json null.String    true "ilo_password description"
-// @Param       RouterHostName json null.String    true "router_host_name description"
-// @Param       RouterPortName json null.String    true "router_port_name description"
+// @Param                CdnId json        int    true "cdn_id description"
+// @Param        MgmtIpAddress json     string    true "mgmt_ip_address description"
+// @Param        MgmtIpNetmask json     string    true "mgmt_ip_netmask description"
+// @Param        MgmtIpGateway json     string    true "mgmt_ip_gateway description"
+// @Param         IloIpAddress json     string    true "ilo_ip_address description"
+// @Param         IloIpNetmask json     string    true "ilo_ip_netmask description"
+// @Param         IloIpGateway json     string    true "ilo_ip_gateway description"
+// @Param          IloUsername json     string    true "ilo_username description"
+// @Param          IloPassword json     string    true "ilo_password description"
+// @Param       RouterHostName json     string    true "router_host_name description"
+// @Param       RouterPortName json     string    true "router_port_name description"
 // @Success 200 {object}    output_format.ApiWrapper
 // @Resource /api/2.0
 // @Router /api/2.0/server [put]
 func putServer(id int, payload []byte) (interface{}, error) {
-	var v Server
-	err := json.Unmarshal(payload, &v)
-	v.Id = int64(id) // overwrite the id in the payload
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	v.LastUpdated = time.Now()
-	sqlString := "UPDATE server SET "
-	sqlString += "host_name = :host_name"
-	sqlString += ",domain_name = :domain_name"
-	sqlString += ",tcp_port = :tcp_port"
-	sqlString += ",xmpp_id = :xmpp_id"
-	sqlString += ",xmpp_passwd = :xmpp_passwd"
-	sqlString += ",interface_name = :interface_name"
-	sqlString += ",ip_address = :ip_address"
-	sqlString += ",ip_netmask = :ip_netmask"
-	sqlString += ",ip_gateway = :ip_gateway"
-	sqlString += ",ip6_address = :ip6_address"
-	sqlString += ",ip6_gateway = :ip6_gateway"
-	sqlString += ",interface_mtu = :interface_mtu"
-	sqlString += ",phys_location = :phys_location"
-	sqlString += ",rack = :rack"
-	sqlString += ",cachegroup = :cachegroup"
-	sqlString += ",type = :type"
-	sqlString += ",status = :status"
-	sqlString += ",upd_pending = :upd_pending"
-	sqlString += ",profile = :profile"
-	sqlString += ",cdn_id = :cdn_id"
-	sqlString += ",mgmt_ip_address = :mgmt_ip_address"
-	sqlString += ",mgmt_ip_netmask = :mgmt_ip_netmask"
-	sqlString += ",mgmt_ip_gateway = :mgmt_ip_gateway"
-	sqlString += ",ilo_ip_address = :ilo_ip_address"
-	sqlString += ",ilo_ip_netmask = :ilo_ip_netmask"
-	sqlString += ",ilo_ip_gateway = :ilo_ip_gateway"
-	sqlString += ",ilo_username = :ilo_username"
-	sqlString += ",ilo_password = :ilo_password"
-	sqlString += ",router_host_name = :router_host_name"
-	sqlString += ",router_port_name = :router_port_name"
-	sqlString += ",last_updated = :last_updated"
-	sqlString += " WHERE id=:id"
-	result, err := db.GlobalDB.NamedExec(sqlString, v)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	return result, err
+	return genericPut(id, payload, "server", (*Server)(nil))
 }
 
 // @Title delServerById
@@ -326,11 +188,5 @@ func putServer(id int, payload []byte) (interface{}, error) {
 // @Resource /api/2.0
 // @Router /api/2.0/server/{id} [delete]
 func delServer(id int) (interface{}, error) {
-	arg := Server{Id: int64(id)}
-	result, err := db.GlobalDB.NamedExec("DELETE FROM server WHERE id=:id", arg)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	return result, err
+	return genericDelete(id, "server")
 }

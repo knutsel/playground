@@ -18,9 +18,6 @@
 package api
 
 import (
-	"encoding/json"
-	"fmt"
-	"github.com/Comcast/traffic_control/traffic_ops/goto2/db"
 	_ "github.com/Comcast/traffic_control/traffic_ops/goto2/output_format" // needed for swagger
 	"time"
 )
@@ -61,16 +58,7 @@ func getRegion(id int) (interface{}, error) {
 // @Resource /api/2.0
 // @Router /api/2.0/region/{id} [get]
 func getRegionById(id int) (interface{}, error) {
-	ret := []Region{}
-	arg := Region{Id: int64(id)}
-	nstmt, err := db.GlobalDB.PrepareNamed(`select * from region where id=:id`)
-	err = nstmt.Select(&ret, arg)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	nstmt.Close()
-	return ret, nil
+	return genericGetById(id, "region", (*Region)(nil))
 }
 
 // @Title getRegions
@@ -80,14 +68,7 @@ func getRegionById(id int) (interface{}, error) {
 // @Resource /api/2.0
 // @Router /api/2.0/region [get]
 func getRegions() (interface{}, error) {
-	ret := []Region{}
-	queryStr := "select * from region"
-	err := db.GlobalDB.Select(&ret, queryStr)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	return ret, nil
+	return genericGet("region", (*Region)(nil))
 }
 
 // @Title postRegion
@@ -99,24 +80,7 @@ func getRegions() (interface{}, error) {
 // @Resource /api/2.0
 // @Router /api/2.0/region [post]
 func postRegion(payload []byte) (interface{}, error) {
-	var v Region
-	err := json.Unmarshal(payload, &v)
-	if err != nil {
-		fmt.Println(err)
-	}
-	sqlString := "INSERT INTO region("
-	sqlString += "name"
-	sqlString += ",division"
-	sqlString += ") VALUES ("
-	sqlString += ":name"
-	sqlString += ",:division"
-	sqlString += ")"
-	result, err := db.GlobalDB.NamedExec(sqlString, v)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	return result, err
+	return genericPost(payload, "region", (*Region)(nil))
 }
 
 // @Title putRegion
@@ -128,25 +92,7 @@ func postRegion(payload []byte) (interface{}, error) {
 // @Resource /api/2.0
 // @Router /api/2.0/region [put]
 func putRegion(id int, payload []byte) (interface{}, error) {
-	var v Region
-	err := json.Unmarshal(payload, &v)
-	v.Id = int64(id) // overwrite the id in the payload
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	v.LastUpdated = time.Now()
-	sqlString := "UPDATE region SET "
-	sqlString += "name = :name"
-	sqlString += ",division = :division"
-	sqlString += ",last_updated = :last_updated"
-	sqlString += " WHERE id=:id"
-	result, err := db.GlobalDB.NamedExec(sqlString, v)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	return result, err
+	return genericPut(id, payload, "region", (*Region)(nil))
 }
 
 // @Title delRegionById
@@ -157,11 +103,5 @@ func putRegion(id int, payload []byte) (interface{}, error) {
 // @Resource /api/2.0
 // @Router /api/2.0/region/{id} [delete]
 func delRegion(id int) (interface{}, error) {
-	arg := Region{Id: int64(id)}
-	result, err := db.GlobalDB.NamedExec("DELETE FROM region WHERE id=:id", arg)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	return result, err
+	return genericDelete(id, "region")
 }

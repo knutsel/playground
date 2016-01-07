@@ -18,9 +18,6 @@
 package api
 
 import (
-	"encoding/json"
-	"fmt"
-	"github.com/Comcast/traffic_control/traffic_ops/goto2/db"
 	_ "github.com/Comcast/traffic_control/traffic_ops/goto2/output_format" // needed for swagger
 	"time"
 )
@@ -60,16 +57,7 @@ func getFederationDeliveryservice(id int) (interface{}, error) {
 // @Resource /api/2.0
 // @Router /api/2.0/federation_deliveryservice/{id} [get]
 func getFederationDeliveryserviceById(id int) (interface{}, error) {
-	ret := []FederationDeliveryservice{}
-	arg := FederationDeliveryservice{Federation: int64(id)}
-	nstmt, err := db.GlobalDB.PrepareNamed(`select * from federation_deliveryservice where federation=:federation`)
-	err = nstmt.Select(&ret, arg)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	nstmt.Close()
-	return ret, nil
+	return genericGetById(id, "federation_deliveryservice", (*FederationDeliveryservice)(nil))
 }
 
 // @Title getFederationDeliveryservices
@@ -79,14 +67,7 @@ func getFederationDeliveryserviceById(id int) (interface{}, error) {
 // @Resource /api/2.0
 // @Router /api/2.0/federation_deliveryservice [get]
 func getFederationDeliveryservices() (interface{}, error) {
-	ret := []FederationDeliveryservice{}
-	queryStr := "select * from federation_deliveryservice"
-	err := db.GlobalDB.Select(&ret, queryStr)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	return ret, nil
+	return genericGet("federation_deliveryservice", (*FederationDeliveryservice)(nil))
 }
 
 // @Title postFederationDeliveryservice
@@ -98,24 +79,7 @@ func getFederationDeliveryservices() (interface{}, error) {
 // @Resource /api/2.0
 // @Router /api/2.0/federation_deliveryservice [post]
 func postFederationDeliveryservice(payload []byte) (interface{}, error) {
-	var v FederationDeliveryservice
-	err := json.Unmarshal(payload, &v)
-	if err != nil {
-		fmt.Println(err)
-	}
-	sqlString := "INSERT INTO federation_deliveryservice("
-	sqlString += "federation"
-	sqlString += ",deliveryservice"
-	sqlString += ") VALUES ("
-	sqlString += ":federation"
-	sqlString += ",:deliveryservice"
-	sqlString += ")"
-	result, err := db.GlobalDB.NamedExec(sqlString, v)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	return result, err
+	return genericPost(payload, "federation_deliveryservice", (*FederationDeliveryservice)(nil))
 }
 
 // @Title putFederationDeliveryservice
@@ -127,25 +91,7 @@ func postFederationDeliveryservice(payload []byte) (interface{}, error) {
 // @Resource /api/2.0
 // @Router /api/2.0/federation_deliveryservice [put]
 func putFederationDeliveryservice(id int, payload []byte) (interface{}, error) {
-	var v FederationDeliveryservice
-	err := json.Unmarshal(payload, &v)
-	v.Federation = int64(id) // overwrite the id in the payload
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	v.LastUpdated = time.Now()
-	sqlString := "UPDATE federation_deliveryservice SET "
-	sqlString += "federation = :federation"
-	sqlString += ",deliveryservice = :deliveryservice"
-	sqlString += ",last_updated = :last_updated"
-	sqlString += " WHERE federation=:federation"
-	result, err := db.GlobalDB.NamedExec(sqlString, v)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	return result, err
+	return genericPut(id, payload, "federation_deliveryservice", (*FederationDeliveryservice)(nil))
 }
 
 // @Title delFederationDeliveryserviceById
@@ -156,11 +102,5 @@ func putFederationDeliveryservice(id int, payload []byte) (interface{}, error) {
 // @Resource /api/2.0
 // @Router /api/2.0/federation_deliveryservice/{id} [delete]
 func delFederationDeliveryservice(id int) (interface{}, error) {
-	arg := FederationDeliveryservice{Federation: int64(id)}
-	result, err := db.GlobalDB.NamedExec("DELETE FROM federation_deliveryservice WHERE id=:id", arg)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	return result, err
+	return genericDelete(id, "federation_deliveryservice")
 }

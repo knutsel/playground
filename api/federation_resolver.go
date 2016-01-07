@@ -18,9 +18,6 @@
 package api
 
 import (
-	"encoding/json"
-	"fmt"
-	"github.com/Comcast/traffic_control/traffic_ops/goto2/db"
 	_ "github.com/Comcast/traffic_control/traffic_ops/goto2/output_format" // needed for swagger
 	"time"
 )
@@ -61,16 +58,7 @@ func getFederationResolver(id int) (interface{}, error) {
 // @Resource /api/2.0
 // @Router /api/2.0/federation_resolver/{id} [get]
 func getFederationResolverById(id int) (interface{}, error) {
-	ret := []FederationResolver{}
-	arg := FederationResolver{Id: int64(id)}
-	nstmt, err := db.GlobalDB.PrepareNamed(`select * from federation_resolver where id=:id`)
-	err = nstmt.Select(&ret, arg)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	nstmt.Close()
-	return ret, nil
+	return genericGetById(id, "federation_resolver", (*FederationResolver)(nil))
 }
 
 // @Title getFederationResolvers
@@ -80,14 +68,7 @@ func getFederationResolverById(id int) (interface{}, error) {
 // @Resource /api/2.0
 // @Router /api/2.0/federation_resolver [get]
 func getFederationResolvers() (interface{}, error) {
-	ret := []FederationResolver{}
-	queryStr := "select * from federation_resolver"
-	err := db.GlobalDB.Select(&ret, queryStr)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	return ret, nil
+	return genericGet("federation_resolver", (*FederationResolver)(nil))
 }
 
 // @Title postFederationResolver
@@ -99,24 +80,7 @@ func getFederationResolvers() (interface{}, error) {
 // @Resource /api/2.0
 // @Router /api/2.0/federation_resolver [post]
 func postFederationResolver(payload []byte) (interface{}, error) {
-	var v FederationResolver
-	err := json.Unmarshal(payload, &v)
-	if err != nil {
-		fmt.Println(err)
-	}
-	sqlString := "INSERT INTO federation_resolver("
-	sqlString += "ip_address"
-	sqlString += ",type"
-	sqlString += ") VALUES ("
-	sqlString += ":ip_address"
-	sqlString += ",:type"
-	sqlString += ")"
-	result, err := db.GlobalDB.NamedExec(sqlString, v)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	return result, err
+	return genericPost(payload, "federation_resolver", (*FederationResolver)(nil))
 }
 
 // @Title putFederationResolver
@@ -128,25 +92,7 @@ func postFederationResolver(payload []byte) (interface{}, error) {
 // @Resource /api/2.0
 // @Router /api/2.0/federation_resolver [put]
 func putFederationResolver(id int, payload []byte) (interface{}, error) {
-	var v FederationResolver
-	err := json.Unmarshal(payload, &v)
-	v.Id = int64(id) // overwrite the id in the payload
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	v.LastUpdated = time.Now()
-	sqlString := "UPDATE federation_resolver SET "
-	sqlString += "ip_address = :ip_address"
-	sqlString += ",type = :type"
-	sqlString += ",last_updated = :last_updated"
-	sqlString += " WHERE id=:id"
-	result, err := db.GlobalDB.NamedExec(sqlString, v)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	return result, err
+	return genericPut(id, payload, "federation_resolver", (*FederationResolver)(nil))
 }
 
 // @Title delFederationResolverById
@@ -157,11 +103,5 @@ func putFederationResolver(id int, payload []byte) (interface{}, error) {
 // @Resource /api/2.0
 // @Router /api/2.0/federation_resolver/{id} [delete]
 func delFederationResolver(id int) (interface{}, error) {
-	arg := FederationResolver{Id: int64(id)}
-	result, err := db.GlobalDB.NamedExec("DELETE FROM federation_resolver WHERE id=:id", arg)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	return result, err
+	return genericDelete(id, "federation_resolver")
 }

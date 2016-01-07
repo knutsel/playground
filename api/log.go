@@ -18,9 +18,6 @@
 package api
 
 import (
-	"encoding/json"
-	"fmt"
-	"github.com/Comcast/traffic_control/traffic_ops/goto2/db"
 	_ "github.com/Comcast/traffic_control/traffic_ops/goto2/output_format" // needed for swagger
 	null "gopkg.in/guregu/null.v3"
 	"time"
@@ -64,16 +61,7 @@ func getLog(id int) (interface{}, error) {
 // @Resource /api/2.0
 // @Router /api/2.0/log/{id} [get]
 func getLogById(id int) (interface{}, error) {
-	ret := []Log{}
-	arg := Log{Id: int64(id)}
-	nstmt, err := db.GlobalDB.PrepareNamed(`select * from log where id=:id`)
-	err = nstmt.Select(&ret, arg)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	nstmt.Close()
-	return ret, nil
+	return genericGetById(id, "log", (*Log)(nil))
 }
 
 // @Title getLogs
@@ -83,14 +71,7 @@ func getLogById(id int) (interface{}, error) {
 // @Resource /api/2.0
 // @Router /api/2.0/log [get]
 func getLogs() (interface{}, error) {
-	ret := []Log{}
-	queryStr := "select * from log"
-	err := db.GlobalDB.Select(&ret, queryStr)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	return ret, nil
+	return genericGet("log", (*Log)(nil))
 }
 
 // @Title postLog
@@ -104,62 +85,21 @@ func getLogs() (interface{}, error) {
 // @Resource /api/2.0
 // @Router /api/2.0/log [post]
 func postLog(payload []byte) (interface{}, error) {
-	var v Log
-	err := json.Unmarshal(payload, &v)
-	if err != nil {
-		fmt.Println(err)
-	}
-	sqlString := "INSERT INTO log("
-	sqlString += "level"
-	sqlString += ",message"
-	sqlString += ",tm_user"
-	sqlString += ",ticketnum"
-	sqlString += ") VALUES ("
-	sqlString += ":level"
-	sqlString += ",:message"
-	sqlString += ",:tm_user"
-	sqlString += ",:ticketnum"
-	sqlString += ")"
-	result, err := db.GlobalDB.NamedExec(sqlString, v)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	return result, err
+	return genericPost(payload, "log", (*Log)(nil))
 }
 
 // @Title putLog
 // @Description modify an existing logentry
 // @Accept  application/json
-// @Param                Level json null.String    true "level description"
+// @Param                Level json     string    true "level description"
 // @Param              Message json     string   false "message description"
 // @Param               TmUser json      int64   false "tm_user description"
-// @Param            Ticketnum json null.String    true "ticketnum description"
+// @Param            Ticketnum json     string    true "ticketnum description"
 // @Success 200 {object}    output_format.ApiWrapper
 // @Resource /api/2.0
 // @Router /api/2.0/log [put]
 func putLog(id int, payload []byte) (interface{}, error) {
-	var v Log
-	err := json.Unmarshal(payload, &v)
-	v.Id = int64(id) // overwrite the id in the payload
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	v.LastUpdated = time.Now()
-	sqlString := "UPDATE log SET "
-	sqlString += "level = :level"
-	sqlString += ",message = :message"
-	sqlString += ",tm_user = :tm_user"
-	sqlString += ",ticketnum = :ticketnum"
-	sqlString += ",last_updated = :last_updated"
-	sqlString += " WHERE id=:id"
-	result, err := db.GlobalDB.NamedExec(sqlString, v)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	return result, err
+	return genericPut(id, payload, "log", (*Log)(nil))
 }
 
 // @Title delLogById
@@ -170,11 +110,5 @@ func putLog(id int, payload []byte) (interface{}, error) {
 // @Resource /api/2.0
 // @Router /api/2.0/log/{id} [delete]
 func delLog(id int) (interface{}, error) {
-	arg := Log{Id: int64(id)}
-	result, err := db.GlobalDB.NamedExec("DELETE FROM log WHERE id=:id", arg)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	return result, err
+	return genericDelete(id, "log")
 }

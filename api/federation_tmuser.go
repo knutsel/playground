@@ -18,9 +18,6 @@
 package api
 
 import (
-	"encoding/json"
-	"fmt"
-	"github.com/Comcast/traffic_control/traffic_ops/goto2/db"
 	_ "github.com/Comcast/traffic_control/traffic_ops/goto2/output_format" // needed for swagger
 	"time"
 )
@@ -61,16 +58,7 @@ func getFederationTmuser(id int) (interface{}, error) {
 // @Resource /api/2.0
 // @Router /api/2.0/federation_tmuser/{id} [get]
 func getFederationTmuserById(id int) (interface{}, error) {
-	ret := []FederationTmuser{}
-	arg := FederationTmuser{Federation: int64(id)}
-	nstmt, err := db.GlobalDB.PrepareNamed(`select * from federation_tmuser where federation=:federation`)
-	err = nstmt.Select(&ret, arg)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	nstmt.Close()
-	return ret, nil
+	return genericGetById(id, "federation_tmuser", (*FederationTmuser)(nil))
 }
 
 // @Title getFederationTmusers
@@ -80,14 +68,7 @@ func getFederationTmuserById(id int) (interface{}, error) {
 // @Resource /api/2.0
 // @Router /api/2.0/federation_tmuser [get]
 func getFederationTmusers() (interface{}, error) {
-	ret := []FederationTmuser{}
-	queryStr := "select * from federation_tmuser"
-	err := db.GlobalDB.Select(&ret, queryStr)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	return ret, nil
+	return genericGet("federation_tmuser", (*FederationTmuser)(nil))
 }
 
 // @Title postFederationTmuser
@@ -100,26 +81,7 @@ func getFederationTmusers() (interface{}, error) {
 // @Resource /api/2.0
 // @Router /api/2.0/federation_tmuser [post]
 func postFederationTmuser(payload []byte) (interface{}, error) {
-	var v FederationTmuser
-	err := json.Unmarshal(payload, &v)
-	if err != nil {
-		fmt.Println(err)
-	}
-	sqlString := "INSERT INTO federation_tmuser("
-	sqlString += "federation"
-	sqlString += ",tm_user"
-	sqlString += ",role"
-	sqlString += ") VALUES ("
-	sqlString += ":federation"
-	sqlString += ",:tm_user"
-	sqlString += ",:role"
-	sqlString += ")"
-	result, err := db.GlobalDB.NamedExec(sqlString, v)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	return result, err
+	return genericPost(payload, "federation_tmuser", (*FederationTmuser)(nil))
 }
 
 // @Title putFederationTmuser
@@ -132,26 +94,7 @@ func postFederationTmuser(payload []byte) (interface{}, error) {
 // @Resource /api/2.0
 // @Router /api/2.0/federation_tmuser [put]
 func putFederationTmuser(id int, payload []byte) (interface{}, error) {
-	var v FederationTmuser
-	err := json.Unmarshal(payload, &v)
-	v.Federation = int64(id) // overwrite the id in the payload
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	v.LastUpdated = time.Now()
-	sqlString := "UPDATE federation_tmuser SET "
-	sqlString += "federation = :federation"
-	sqlString += ",tm_user = :tm_user"
-	sqlString += ",role = :role"
-	sqlString += ",last_updated = :last_updated"
-	sqlString += " WHERE federation=:federation"
-	result, err := db.GlobalDB.NamedExec(sqlString, v)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	return result, err
+	return genericPut(id, payload, "federation_tmuser", (*FederationTmuser)(nil))
 }
 
 // @Title delFederationTmuserById
@@ -162,11 +105,5 @@ func putFederationTmuser(id int, payload []byte) (interface{}, error) {
 // @Resource /api/2.0
 // @Router /api/2.0/federation_tmuser/{id} [delete]
 func delFederationTmuser(id int) (interface{}, error) {
-	arg := FederationTmuser{Federation: int64(id)}
-	result, err := db.GlobalDB.NamedExec("DELETE FROM federation_tmuser WHERE id=:id", arg)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	return result, err
+	return genericDelete(id, "federation_tmuser")
 }

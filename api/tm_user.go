@@ -18,9 +18,6 @@
 package api
 
 import (
-	"encoding/json"
-	"fmt"
-	"github.com/Comcast/traffic_control/traffic_ops/goto2/db"
 	_ "github.com/Comcast/traffic_control/traffic_ops/goto2/output_format" // needed for swagger
 	null "gopkg.in/guregu/null.v3"
 	"time"
@@ -80,16 +77,7 @@ func getTmUser(id int) (interface{}, error) {
 // @Resource /api/2.0
 // @Router /api/2.0/tm_user/{id} [get]
 func getTmUserById(id int) (interface{}, error) {
-	ret := []TmUser{}
-	arg := TmUser{Id: int64(id)}
-	nstmt, err := db.GlobalDB.PrepareNamed(`select * from tm_user where id=:id`)
-	err = nstmt.Select(&ret, arg)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	nstmt.Close()
-	return ret, nil
+	return genericGetById(id, "tm_user", (*TmUser)(nil))
 }
 
 // @Title getTmUsers
@@ -99,14 +87,7 @@ func getTmUserById(id int) (interface{}, error) {
 // @Resource /api/2.0
 // @Router /api/2.0/tm_user [get]
 func getTmUsers() (interface{}, error) {
-	ret := []TmUser{}
-	queryStr := "select * from tm_user"
-	err := db.GlobalDB.Select(&ret, queryStr)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	return ret, nil
+	return genericGet("tm_user", (*TmUser)(nil))
 }
 
 // @Title postTmUser
@@ -136,126 +117,37 @@ func getTmUsers() (interface{}, error) {
 // @Resource /api/2.0
 // @Router /api/2.0/tm_user [post]
 func postTmUser(payload []byte) (interface{}, error) {
-	var v TmUser
-	err := json.Unmarshal(payload, &v)
-	if err != nil {
-		fmt.Println(err)
-	}
-	sqlString := "INSERT INTO tm_user("
-	sqlString += "username"
-	sqlString += ",role"
-	sqlString += ",uid"
-	sqlString += ",gid"
-	sqlString += ",local_passwd"
-	sqlString += ",confirm_local_passwd"
-	sqlString += ",company"
-	sqlString += ",email"
-	sqlString += ",full_name"
-	sqlString += ",new_user"
-	sqlString += ",address_line1"
-	sqlString += ",address_line2"
-	sqlString += ",city"
-	sqlString += ",state_or_province"
-	sqlString += ",phone_number"
-	sqlString += ",postal_code"
-	sqlString += ",country"
-	sqlString += ",local_user"
-	sqlString += ",token"
-	sqlString += ",registration_sent"
-	sqlString += ") VALUES ("
-	sqlString += ":username"
-	sqlString += ",:role"
-	sqlString += ",:uid"
-	sqlString += ",:gid"
-	sqlString += ",:local_passwd"
-	sqlString += ",:confirm_local_passwd"
-	sqlString += ",:company"
-	sqlString += ",:email"
-	sqlString += ",:full_name"
-	sqlString += ",:new_user"
-	sqlString += ",:address_line1"
-	sqlString += ",:address_line2"
-	sqlString += ",:city"
-	sqlString += ",:state_or_province"
-	sqlString += ",:phone_number"
-	sqlString += ",:postal_code"
-	sqlString += ",:country"
-	sqlString += ",:local_user"
-	sqlString += ",:token"
-	sqlString += ",:registration_sent"
-	sqlString += ")"
-	result, err := db.GlobalDB.NamedExec(sqlString, v)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	return result, err
+	return genericPost(payload, "tm_user", (*TmUser)(nil))
 }
 
 // @Title putTmUser
 // @Description modify an existing tm_userentry
 // @Accept  application/json
-// @Param             Username json null.String    true "username description"
-// @Param                 Role json   null.Int    true "role description"
-// @Param                  Uid json   null.Int    true "uid description"
-// @Param                  Gid json   null.Int    true "gid description"
-// @Param          LocalPasswd json null.String    true "local_passwd description"
-// @Param   ConfirmLocalPasswd json null.String    true "confirm_local_passwd description"
-// @Param              Company json null.String    true "company description"
-// @Param                Email json null.String    true "email description"
-// @Param             FullName json null.String    true "full_name description"
+// @Param             Username json     string    true "username description"
+// @Param                 Role json        int    true "role description"
+// @Param                  Uid json        int    true "uid description"
+// @Param                  Gid json        int    true "gid description"
+// @Param          LocalPasswd json     string    true "local_passwd description"
+// @Param   ConfirmLocalPasswd json     string    true "confirm_local_passwd description"
+// @Param              Company json     string    true "company description"
+// @Param                Email json     string    true "email description"
+// @Param             FullName json     string    true "full_name description"
 // @Param              NewUser json      int64   false "new_user description"
-// @Param         AddressLine1 json null.String    true "address_line1 description"
-// @Param         AddressLine2 json null.String    true "address_line2 description"
-// @Param                 City json null.String    true "city description"
-// @Param      StateOrProvince json null.String    true "state_or_province description"
-// @Param          PhoneNumber json null.String    true "phone_number description"
-// @Param           PostalCode json null.String    true "postal_code description"
-// @Param              Country json null.String    true "country description"
+// @Param         AddressLine1 json     string    true "address_line1 description"
+// @Param         AddressLine2 json     string    true "address_line2 description"
+// @Param                 City json     string    true "city description"
+// @Param      StateOrProvince json     string    true "state_or_province description"
+// @Param          PhoneNumber json     string    true "phone_number description"
+// @Param           PostalCode json     string    true "postal_code description"
+// @Param              Country json     string    true "country description"
 // @Param            LocalUser json      int64   false "local_user description"
-// @Param                Token json null.String    true "token description"
+// @Param                Token json     string    true "token description"
 // @Param     RegistrationSent json  time.Time   false "registration_sent description"
 // @Success 200 {object}    output_format.ApiWrapper
 // @Resource /api/2.0
 // @Router /api/2.0/tm_user [put]
 func putTmUser(id int, payload []byte) (interface{}, error) {
-	var v TmUser
-	err := json.Unmarshal(payload, &v)
-	v.Id = int64(id) // overwrite the id in the payload
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	v.LastUpdated = time.Now()
-	sqlString := "UPDATE tm_user SET "
-	sqlString += "username = :username"
-	sqlString += ",role = :role"
-	sqlString += ",uid = :uid"
-	sqlString += ",gid = :gid"
-	sqlString += ",local_passwd = :local_passwd"
-	sqlString += ",confirm_local_passwd = :confirm_local_passwd"
-	sqlString += ",last_updated = :last_updated"
-	sqlString += ",company = :company"
-	sqlString += ",email = :email"
-	sqlString += ",full_name = :full_name"
-	sqlString += ",new_user = :new_user"
-	sqlString += ",address_line1 = :address_line1"
-	sqlString += ",address_line2 = :address_line2"
-	sqlString += ",city = :city"
-	sqlString += ",state_or_province = :state_or_province"
-	sqlString += ",phone_number = :phone_number"
-	sqlString += ",postal_code = :postal_code"
-	sqlString += ",country = :country"
-	sqlString += ",local_user = :local_user"
-	sqlString += ",token = :token"
-	sqlString += ",registration_sent = :registration_sent"
-	sqlString += " WHERE id=:id"
-	result, err := db.GlobalDB.NamedExec(sqlString, v)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	return result, err
+	return genericPut(id, payload, "tm_user", (*TmUser)(nil))
 }
 
 // @Title delTmUserById
@@ -266,11 +158,5 @@ func putTmUser(id int, payload []byte) (interface{}, error) {
 // @Resource /api/2.0
 // @Router /api/2.0/tm_user/{id} [delete]
 func delTmUser(id int) (interface{}, error) {
-	arg := TmUser{Id: int64(id)}
-	result, err := db.GlobalDB.NamedExec("DELETE FROM tm_user WHERE id=:id", arg)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	return result, err
+	return genericDelete(id, "tm_user")
 }

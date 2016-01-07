@@ -18,9 +18,6 @@
 package api
 
 import (
-	"encoding/json"
-	"fmt"
-	"github.com/Comcast/traffic_control/traffic_ops/goto2/db"
 	_ "github.com/Comcast/traffic_control/traffic_ops/goto2/output_format" // needed for swagger
 	null "gopkg.in/guregu/null.v3"
 	"time"
@@ -62,16 +59,7 @@ func getProfile(id int) (interface{}, error) {
 // @Resource /api/2.0
 // @Router /api/2.0/profile/{id} [get]
 func getProfileById(id int) (interface{}, error) {
-	ret := []Profile{}
-	arg := Profile{Id: int64(id)}
-	nstmt, err := db.GlobalDB.PrepareNamed(`select * from profile where id=:id`)
-	err = nstmt.Select(&ret, arg)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	nstmt.Close()
-	return ret, nil
+	return genericGetById(id, "profile", (*Profile)(nil))
 }
 
 // @Title getProfiles
@@ -81,14 +69,7 @@ func getProfileById(id int) (interface{}, error) {
 // @Resource /api/2.0
 // @Router /api/2.0/profile [get]
 func getProfiles() (interface{}, error) {
-	ret := []Profile{}
-	queryStr := "select * from profile"
-	err := db.GlobalDB.Select(&ret, queryStr)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	return ret, nil
+	return genericGet("profile", (*Profile)(nil))
 }
 
 // @Title postProfile
@@ -100,54 +81,19 @@ func getProfiles() (interface{}, error) {
 // @Resource /api/2.0
 // @Router /api/2.0/profile [post]
 func postProfile(payload []byte) (interface{}, error) {
-	var v Profile
-	err := json.Unmarshal(payload, &v)
-	if err != nil {
-		fmt.Println(err)
-	}
-	sqlString := "INSERT INTO profile("
-	sqlString += "name"
-	sqlString += ",description"
-	sqlString += ") VALUES ("
-	sqlString += ":name"
-	sqlString += ",:description"
-	sqlString += ")"
-	result, err := db.GlobalDB.NamedExec(sqlString, v)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	return result, err
+	return genericPost(payload, "profile", (*Profile)(nil))
 }
 
 // @Title putProfile
 // @Description modify an existing profileentry
 // @Accept  application/json
 // @Param                 Name json     string   false "name description"
-// @Param          Description json null.String    true "description description"
+// @Param          Description json     string    true "description description"
 // @Success 200 {object}    output_format.ApiWrapper
 // @Resource /api/2.0
 // @Router /api/2.0/profile [put]
 func putProfile(id int, payload []byte) (interface{}, error) {
-	var v Profile
-	err := json.Unmarshal(payload, &v)
-	v.Id = int64(id) // overwrite the id in the payload
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	v.LastUpdated = time.Now()
-	sqlString := "UPDATE profile SET "
-	sqlString += "name = :name"
-	sqlString += ",description = :description"
-	sqlString += ",last_updated = :last_updated"
-	sqlString += " WHERE id=:id"
-	result, err := db.GlobalDB.NamedExec(sqlString, v)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	return result, err
+	return genericPut(id, payload, "profile", (*Profile)(nil))
 }
 
 // @Title delProfileById
@@ -158,11 +104,5 @@ func putProfile(id int, payload []byte) (interface{}, error) {
 // @Resource /api/2.0
 // @Router /api/2.0/profile/{id} [delete]
 func delProfile(id int) (interface{}, error) {
-	arg := Profile{Id: int64(id)}
-	result, err := db.GlobalDB.NamedExec("DELETE FROM profile WHERE id=:id", arg)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	return result, err
+	return genericDelete(id, "profile")
 }

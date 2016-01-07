@@ -18,9 +18,6 @@
 package api
 
 import (
-	"encoding/json"
-	"fmt"
-	"github.com/Comcast/traffic_control/traffic_ops/goto2/db"
 	_ "github.com/Comcast/traffic_control/traffic_ops/goto2/output_format" // needed for swagger
 	null "gopkg.in/guregu/null.v3"
 	"time"
@@ -66,16 +63,7 @@ func getStaticdnsentry(id int) (interface{}, error) {
 // @Resource /api/2.0
 // @Router /api/2.0/staticdnsentry/{id} [get]
 func getStaticdnsentryById(id int) (interface{}, error) {
-	ret := []Staticdnsentry{}
-	arg := Staticdnsentry{Id: int64(id)}
-	nstmt, err := db.GlobalDB.PrepareNamed(`select * from staticdnsentry where id=:id`)
-	err = nstmt.Select(&ret, arg)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	nstmt.Close()
-	return ret, nil
+	return genericGetById(id, "staticdnsentry", (*Staticdnsentry)(nil))
 }
 
 // @Title getStaticdnsentrys
@@ -85,14 +73,7 @@ func getStaticdnsentryById(id int) (interface{}, error) {
 // @Resource /api/2.0
 // @Router /api/2.0/staticdnsentry [get]
 func getStaticdnsentrys() (interface{}, error) {
-	ret := []Staticdnsentry{}
-	queryStr := "select * from staticdnsentry"
-	err := db.GlobalDB.Select(&ret, queryStr)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	return ret, nil
+	return genericGet("staticdnsentry", (*Staticdnsentry)(nil))
 }
 
 // @Title postStaticdnsentry
@@ -108,32 +89,7 @@ func getStaticdnsentrys() (interface{}, error) {
 // @Resource /api/2.0
 // @Router /api/2.0/staticdnsentry [post]
 func postStaticdnsentry(payload []byte) (interface{}, error) {
-	var v Staticdnsentry
-	err := json.Unmarshal(payload, &v)
-	if err != nil {
-		fmt.Println(err)
-	}
-	sqlString := "INSERT INTO staticdnsentry("
-	sqlString += "host"
-	sqlString += ",address"
-	sqlString += ",type"
-	sqlString += ",ttl"
-	sqlString += ",deliveryservice"
-	sqlString += ",cachegroup"
-	sqlString += ") VALUES ("
-	sqlString += ":host"
-	sqlString += ",:address"
-	sqlString += ",:type"
-	sqlString += ",:ttl"
-	sqlString += ",:deliveryservice"
-	sqlString += ",:cachegroup"
-	sqlString += ")"
-	result, err := db.GlobalDB.NamedExec(sqlString, v)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	return result, err
+	return genericPost(payload, "staticdnsentry", (*Staticdnsentry)(nil))
 }
 
 // @Title putStaticdnsentry
@@ -144,34 +100,12 @@ func postStaticdnsentry(payload []byte) (interface{}, error) {
 // @Param                 Type json      int64   false "type description"
 // @Param                  Ttl json      int64   false "ttl description"
 // @Param      Deliveryservice json      int64   false "deliveryservice description"
-// @Param           Cachegroup json   null.Int    true "cachegroup description"
+// @Param           Cachegroup json        int    true "cachegroup description"
 // @Success 200 {object}    output_format.ApiWrapper
 // @Resource /api/2.0
 // @Router /api/2.0/staticdnsentry [put]
 func putStaticdnsentry(id int, payload []byte) (interface{}, error) {
-	var v Staticdnsentry
-	err := json.Unmarshal(payload, &v)
-	v.Id = int64(id) // overwrite the id in the payload
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	v.LastUpdated = time.Now()
-	sqlString := "UPDATE staticdnsentry SET "
-	sqlString += "host = :host"
-	sqlString += ",address = :address"
-	sqlString += ",type = :type"
-	sqlString += ",ttl = :ttl"
-	sqlString += ",deliveryservice = :deliveryservice"
-	sqlString += ",cachegroup = :cachegroup"
-	sqlString += ",last_updated = :last_updated"
-	sqlString += " WHERE id=:id"
-	result, err := db.GlobalDB.NamedExec(sqlString, v)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	return result, err
+	return genericPut(id, payload, "staticdnsentry", (*Staticdnsentry)(nil))
 }
 
 // @Title delStaticdnsentryById
@@ -182,11 +116,5 @@ func putStaticdnsentry(id int, payload []byte) (interface{}, error) {
 // @Resource /api/2.0
 // @Router /api/2.0/staticdnsentry/{id} [delete]
 func delStaticdnsentry(id int) (interface{}, error) {
-	arg := Staticdnsentry{Id: int64(id)}
-	result, err := db.GlobalDB.NamedExec("DELETE FROM staticdnsentry WHERE id=:id", arg)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	return result, err
+	return genericDelete(id, "staticdnsentry")
 }

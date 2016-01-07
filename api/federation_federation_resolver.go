@@ -18,9 +18,6 @@
 package api
 
 import (
-	"encoding/json"
-	"fmt"
-	"github.com/Comcast/traffic_control/traffic_ops/goto2/db"
 	_ "github.com/Comcast/traffic_control/traffic_ops/goto2/output_format" // needed for swagger
 	"time"
 )
@@ -60,16 +57,7 @@ func getFederationFederationResolver(id int) (interface{}, error) {
 // @Resource /api/2.0
 // @Router /api/2.0/federation_federation_resolver/{id} [get]
 func getFederationFederationResolverById(id int) (interface{}, error) {
-	ret := []FederationFederationResolver{}
-	arg := FederationFederationResolver{Federation: int64(id)}
-	nstmt, err := db.GlobalDB.PrepareNamed(`select * from federation_federation_resolver where federation=:federation`)
-	err = nstmt.Select(&ret, arg)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	nstmt.Close()
-	return ret, nil
+	return genericGetById(id, "federation_federation_resolver", (*FederationFederationResolver)(nil))
 }
 
 // @Title getFederationFederationResolvers
@@ -79,14 +67,7 @@ func getFederationFederationResolverById(id int) (interface{}, error) {
 // @Resource /api/2.0
 // @Router /api/2.0/federation_federation_resolver [get]
 func getFederationFederationResolvers() (interface{}, error) {
-	ret := []FederationFederationResolver{}
-	queryStr := "select * from federation_federation_resolver"
-	err := db.GlobalDB.Select(&ret, queryStr)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	return ret, nil
+	return genericGet("federation_federation_resolver", (*FederationFederationResolver)(nil))
 }
 
 // @Title postFederationFederationResolver
@@ -98,24 +79,7 @@ func getFederationFederationResolvers() (interface{}, error) {
 // @Resource /api/2.0
 // @Router /api/2.0/federation_federation_resolver [post]
 func postFederationFederationResolver(payload []byte) (interface{}, error) {
-	var v FederationFederationResolver
-	err := json.Unmarshal(payload, &v)
-	if err != nil {
-		fmt.Println(err)
-	}
-	sqlString := "INSERT INTO federation_federation_resolver("
-	sqlString += "federation"
-	sqlString += ",federation_resolver"
-	sqlString += ") VALUES ("
-	sqlString += ":federation"
-	sqlString += ",:federation_resolver"
-	sqlString += ")"
-	result, err := db.GlobalDB.NamedExec(sqlString, v)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	return result, err
+	return genericPost(payload, "federation_federation_resolver", (*FederationFederationResolver)(nil))
 }
 
 // @Title putFederationFederationResolver
@@ -127,25 +91,7 @@ func postFederationFederationResolver(payload []byte) (interface{}, error) {
 // @Resource /api/2.0
 // @Router /api/2.0/federation_federation_resolver [put]
 func putFederationFederationResolver(id int, payload []byte) (interface{}, error) {
-	var v FederationFederationResolver
-	err := json.Unmarshal(payload, &v)
-	v.Federation = int64(id) // overwrite the id in the payload
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	v.LastUpdated = time.Now()
-	sqlString := "UPDATE federation_federation_resolver SET "
-	sqlString += "federation = :federation"
-	sqlString += ",federation_resolver = :federation_resolver"
-	sqlString += ",last_updated = :last_updated"
-	sqlString += " WHERE federation=:federation"
-	result, err := db.GlobalDB.NamedExec(sqlString, v)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	return result, err
+	return genericPut(id, payload, "federation_federation_resolver", (*FederationFederationResolver)(nil))
 }
 
 // @Title delFederationFederationResolverById
@@ -156,11 +102,5 @@ func putFederationFederationResolver(id int, payload []byte) (interface{}, error
 // @Resource /api/2.0
 // @Router /api/2.0/federation_federation_resolver/{id} [delete]
 func delFederationFederationResolver(id int) (interface{}, error) {
-	arg := FederationFederationResolver{Federation: int64(id)}
-	result, err := db.GlobalDB.NamedExec("DELETE FROM federation_federation_resolver WHERE id=:id", arg)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	return result, err
+	return genericDelete(id, "federation_federation_resolver")
 }

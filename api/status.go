@@ -18,9 +18,6 @@
 package api
 
 import (
-	"encoding/json"
-	"fmt"
-	"github.com/Comcast/traffic_control/traffic_ops/goto2/db"
 	_ "github.com/Comcast/traffic_control/traffic_ops/goto2/output_format" // needed for swagger
 	null "gopkg.in/guregu/null.v3"
 	"time"
@@ -62,16 +59,7 @@ func getStatus(id int) (interface{}, error) {
 // @Resource /api/2.0
 // @Router /api/2.0/status/{id} [get]
 func getStatusById(id int) (interface{}, error) {
-	ret := []Status{}
-	arg := Status{Id: int64(id)}
-	nstmt, err := db.GlobalDB.PrepareNamed(`select * from status where id=:id`)
-	err = nstmt.Select(&ret, arg)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	nstmt.Close()
-	return ret, nil
+	return genericGetById(id, "status", (*Status)(nil))
 }
 
 // @Title getStatuss
@@ -81,14 +69,7 @@ func getStatusById(id int) (interface{}, error) {
 // @Resource /api/2.0
 // @Router /api/2.0/status [get]
 func getStatuss() (interface{}, error) {
-	ret := []Status{}
-	queryStr := "select * from status"
-	err := db.GlobalDB.Select(&ret, queryStr)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	return ret, nil
+	return genericGet("status", (*Status)(nil))
 }
 
 // @Title postStatus
@@ -100,54 +81,19 @@ func getStatuss() (interface{}, error) {
 // @Resource /api/2.0
 // @Router /api/2.0/status [post]
 func postStatus(payload []byte) (interface{}, error) {
-	var v Status
-	err := json.Unmarshal(payload, &v)
-	if err != nil {
-		fmt.Println(err)
-	}
-	sqlString := "INSERT INTO status("
-	sqlString += "name"
-	sqlString += ",description"
-	sqlString += ") VALUES ("
-	sqlString += ":name"
-	sqlString += ",:description"
-	sqlString += ")"
-	result, err := db.GlobalDB.NamedExec(sqlString, v)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	return result, err
+	return genericPost(payload, "status", (*Status)(nil))
 }
 
 // @Title putStatus
 // @Description modify an existing statusentry
 // @Accept  application/json
 // @Param                 Name json     string   false "name description"
-// @Param          Description json null.String    true "description description"
+// @Param          Description json     string    true "description description"
 // @Success 200 {object}    output_format.ApiWrapper
 // @Resource /api/2.0
 // @Router /api/2.0/status [put]
 func putStatus(id int, payload []byte) (interface{}, error) {
-	var v Status
-	err := json.Unmarshal(payload, &v)
-	v.Id = int64(id) // overwrite the id in the payload
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	v.LastUpdated = time.Now()
-	sqlString := "UPDATE status SET "
-	sqlString += "name = :name"
-	sqlString += ",description = :description"
-	sqlString += ",last_updated = :last_updated"
-	sqlString += " WHERE id=:id"
-	result, err := db.GlobalDB.NamedExec(sqlString, v)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	return result, err
+	return genericPut(id, payload, "status", (*Status)(nil))
 }
 
 // @Title delStatusById
@@ -158,11 +104,5 @@ func putStatus(id int, payload []byte) (interface{}, error) {
 // @Resource /api/2.0
 // @Router /api/2.0/status/{id} [delete]
 func delStatus(id int) (interface{}, error) {
-	arg := Status{Id: int64(id)}
-	result, err := db.GlobalDB.NamedExec("DELETE FROM status WHERE id=:id", arg)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	return result, err
+	return genericDelete(id, "status")
 }

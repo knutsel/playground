@@ -18,9 +18,6 @@
 package api
 
 import (
-	"encoding/json"
-	"fmt"
-	"github.com/Comcast/traffic_control/traffic_ops/goto2/db"
 	_ "github.com/Comcast/traffic_control/traffic_ops/goto2/output_format" // needed for swagger
 	null "gopkg.in/guregu/null.v3"
 	"time"
@@ -41,7 +38,7 @@ type Deliveryservice struct {
 	OrgServerFqdn        null.String `db:"org_server_fqdn" json:"orgServerFqdn"`
 	Type                 int64       `db:"type" json:"type"`
 	Profile              int64       `db:"profile" json:"profile"`
-	CdnId                int64       `db:"cdn_id" json:"cdnId"`
+	CdnId                null.Int    `db:"cdn_id" json:"cdnId"`
 	CcrDnsTtl            null.Int    `db:"ccr_dns_ttl" json:"ccrDnsTtl"`
 	GlobalMaxMbps        null.Int    `db:"global_max_mbps" json:"globalMaxMbps"`
 	GlobalMaxTps         null.Int    `db:"global_max_tps" json:"globalMaxTps"`
@@ -69,7 +66,6 @@ type Deliveryservice struct {
 	TrResponseHeaders    null.String `db:"tr_response_headers" json:"trResponseHeaders"`
 	InitialDispersion    null.Int    `db:"initial_dispersion" json:"initialDispersion"`
 	DnsBypassCname       null.String `db:"dns_bypass_cname" json:"dnsBypassCname"`
-	TrRequestHeaders     null.String `db:"tr_request_headers" json:"trRequestHeaders"`
 }
 
 func handleDeliveryservice(method string, id int, payload []byte) (interface{}, error) {
@@ -101,16 +97,7 @@ func getDeliveryservice(id int) (interface{}, error) {
 // @Resource /api/2.0
 // @Router /api/2.0/deliveryservice/{id} [get]
 func getDeliveryserviceById(id int) (interface{}, error) {
-	ret := []Deliveryservice{}
-	arg := Deliveryservice{Id: int64(id)}
-	nstmt, err := db.GlobalDB.PrepareNamed(`select * from deliveryservice where id=:id`)
-	err = nstmt.Select(&ret, arg)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	nstmt.Close()
-	return ret, nil
+	return genericGetById(id, "deliveryservice", (*Deliveryservice)(nil))
 }
 
 // @Title getDeliveryservices
@@ -120,14 +107,7 @@ func getDeliveryserviceById(id int) (interface{}, error) {
 // @Resource /api/2.0
 // @Router /api/2.0/deliveryservice [get]
 func getDeliveryservices() (interface{}, error) {
-	ret := []Deliveryservice{}
-	queryStr := "select * from deliveryservice"
-	err := db.GlobalDB.Select(&ret, queryStr)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	return ret, nil
+	return genericGet("deliveryservice", (*Deliveryservice)(nil))
 }
 
 // @Title postDeliveryservice
@@ -146,7 +126,7 @@ func getDeliveryservices() (interface{}, error) {
 // @Param        OrgServerFqdn json     string    true "org_server_fqdn description"
 // @Param                 Type json      int64   false "type description"
 // @Param              Profile json      int64   false "profile description"
-// @Param                CdnId json      int64   false "cdn_id description"
+// @Param                CdnId json        int    true "cdn_id description"
 // @Param            CcrDnsTtl json        int    true "ccr_dns_ttl description"
 // @Param        GlobalMaxMbps json        int    true "global_max_mbps description"
 // @Param         GlobalMaxTps json        int    true "global_max_tps description"
@@ -173,107 +153,11 @@ func getDeliveryservices() (interface{}, error) {
 // @Param    TrResponseHeaders json     string    true "tr_response_headers description"
 // @Param    InitialDispersion json        int    true "initial_dispersion description"
 // @Param       DnsBypassCname json     string    true "dns_bypass_cname description"
-// @Param     TrRequestHeaders json     string    true "tr_request_headers description"
 // @Success 200 {object}    output_format.ApiWrapper
 // @Resource /api/2.0
 // @Router /api/2.0/deliveryservice [post]
 func postDeliveryservice(payload []byte) (interface{}, error) {
-	var v Deliveryservice
-	err := json.Unmarshal(payload, &v)
-	if err != nil {
-		fmt.Println(err)
-	}
-	sqlString := "INSERT INTO deliveryservice("
-	sqlString += "xml_id"
-	sqlString += ",active"
-	sqlString += ",dscp"
-	sqlString += ",signed"
-	sqlString += ",qstring_ignore"
-	sqlString += ",geo_limit"
-	sqlString += ",http_bypass_fqdn"
-	sqlString += ",dns_bypass_ip"
-	sqlString += ",dns_bypass_ip6"
-	sqlString += ",dns_bypass_ttl"
-	sqlString += ",org_server_fqdn"
-	sqlString += ",type"
-	sqlString += ",profile"
-	sqlString += ",cdn_id"
-	sqlString += ",ccr_dns_ttl"
-	sqlString += ",global_max_mbps"
-	sqlString += ",global_max_tps"
-	sqlString += ",long_desc"
-	sqlString += ",long_desc_1"
-	sqlString += ",long_desc_2"
-	sqlString += ",max_dns_answers"
-	sqlString += ",info_url"
-	sqlString += ",miss_lat"
-	sqlString += ",miss_long"
-	sqlString += ",check_path"
-	sqlString += ",protocol"
-	sqlString += ",ssl_key_version"
-	sqlString += ",ipv6_routing_enabled"
-	sqlString += ",range_request_handling"
-	sqlString += ",edge_header_rewrite"
-	sqlString += ",origin_shield"
-	sqlString += ",mid_header_rewrite"
-	sqlString += ",regex_remap"
-	sqlString += ",cacheurl"
-	sqlString += ",remap_text"
-	sqlString += ",multi_site_origin"
-	sqlString += ",display_name"
-	sqlString += ",tr_response_headers"
-	sqlString += ",initial_dispersion"
-	sqlString += ",dns_bypass_cname"
-	sqlString += ",tr_request_headers"
-	sqlString += ") VALUES ("
-	sqlString += ":xml_id"
-	sqlString += ",:active"
-	sqlString += ",:dscp"
-	sqlString += ",:signed"
-	sqlString += ",:qstring_ignore"
-	sqlString += ",:geo_limit"
-	sqlString += ",:http_bypass_fqdn"
-	sqlString += ",:dns_bypass_ip"
-	sqlString += ",:dns_bypass_ip6"
-	sqlString += ",:dns_bypass_ttl"
-	sqlString += ",:org_server_fqdn"
-	sqlString += ",:type"
-	sqlString += ",:profile"
-	sqlString += ",:cdn_id"
-	sqlString += ",:ccr_dns_ttl"
-	sqlString += ",:global_max_mbps"
-	sqlString += ",:global_max_tps"
-	sqlString += ",:long_desc"
-	sqlString += ",:long_desc_1"
-	sqlString += ",:long_desc_2"
-	sqlString += ",:max_dns_answers"
-	sqlString += ",:info_url"
-	sqlString += ",:miss_lat"
-	sqlString += ",:miss_long"
-	sqlString += ",:check_path"
-	sqlString += ",:protocol"
-	sqlString += ",:ssl_key_version"
-	sqlString += ",:ipv6_routing_enabled"
-	sqlString += ",:range_request_handling"
-	sqlString += ",:edge_header_rewrite"
-	sqlString += ",:origin_shield"
-	sqlString += ",:mid_header_rewrite"
-	sqlString += ",:regex_remap"
-	sqlString += ",:cacheurl"
-	sqlString += ",:remap_text"
-	sqlString += ",:multi_site_origin"
-	sqlString += ",:display_name"
-	sqlString += ",:tr_response_headers"
-	sqlString += ",:initial_dispersion"
-	sqlString += ",:dns_bypass_cname"
-	sqlString += ",:tr_request_headers"
-	sqlString += ")"
-	result, err := db.GlobalDB.NamedExec(sqlString, v)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	return result, err
+	return genericPost(payload, "deliveryservice", (*Deliveryservice)(nil))
 }
 
 // @Title putDeliveryservice
@@ -282,106 +166,48 @@ func postDeliveryservice(payload []byte) (interface{}, error) {
 // @Param                XmlId json     string   false "xml_id description"
 // @Param               Active json      int64   false "active description"
 // @Param                 Dscp json      int64   false "dscp description"
-// @Param               Signed json   null.Int    true "signed description"
-// @Param        QstringIgnore json   null.Int    true "qstring_ignore description"
-// @Param             GeoLimit json   null.Int    true "geo_limit description"
-// @Param       HttpBypassFqdn json null.String    true "http_bypass_fqdn description"
-// @Param          DnsBypassIp json null.String    true "dns_bypass_ip description"
-// @Param         DnsBypassIp6 json null.String    true "dns_bypass_ip6 description"
-// @Param         DnsBypassTtl json   null.Int    true "dns_bypass_ttl description"
-// @Param        OrgServerFqdn json null.String    true "org_server_fqdn description"
+// @Param               Signed json        int    true "signed description"
+// @Param        QstringIgnore json        int    true "qstring_ignore description"
+// @Param             GeoLimit json        int    true "geo_limit description"
+// @Param       HttpBypassFqdn json     string    true "http_bypass_fqdn description"
+// @Param          DnsBypassIp json     string    true "dns_bypass_ip description"
+// @Param         DnsBypassIp6 json     string    true "dns_bypass_ip6 description"
+// @Param         DnsBypassTtl json        int    true "dns_bypass_ttl description"
+// @Param        OrgServerFqdn json     string    true "org_server_fqdn description"
 // @Param                 Type json      int64   false "type description"
 // @Param              Profile json      int64   false "profile description"
-// @Param                CdnId json      int64   false "cdn_id description"
-// @Param            CcrDnsTtl json   null.Int    true "ccr_dns_ttl description"
-// @Param        GlobalMaxMbps json   null.Int    true "global_max_mbps description"
-// @Param         GlobalMaxTps json   null.Int    true "global_max_tps description"
-// @Param             LongDesc json null.String    true "long_desc description"
-// @Param            LongDesc1 json null.String    true "long_desc_1 description"
-// @Param            LongDesc2 json null.String    true "long_desc_2 description"
-// @Param        MaxDnsAnswers json   null.Int    true "max_dns_answers description"
-// @Param              InfoUrl json null.String    true "info_url description"
-// @Param              MissLat json null.Float    true "miss_lat description"
-// @Param             MissLong json null.Float    true "miss_long description"
-// @Param            CheckPath json null.String    true "check_path description"
-// @Param             Protocol json   null.Int    true "protocol description"
-// @Param        SslKeyVersion json   null.Int    true "ssl_key_version description"
-// @Param   Ipv6RoutingEnabled json   null.Int    true "ipv6_routing_enabled description"
-// @Param RangeRequestHandling json   null.Int    true "range_request_handling description"
-// @Param    EdgeHeaderRewrite json null.String    true "edge_header_rewrite description"
-// @Param         OriginShield json null.String    true "origin_shield description"
-// @Param     MidHeaderRewrite json null.String    true "mid_header_rewrite description"
-// @Param           RegexRemap json null.String    true "regex_remap description"
-// @Param             Cacheurl json null.String    true "cacheurl description"
-// @Param            RemapText json null.String    true "remap_text description"
-// @Param      MultiSiteOrigin json   null.Int    true "multi_site_origin description"
+// @Param                CdnId json        int    true "cdn_id description"
+// @Param            CcrDnsTtl json        int    true "ccr_dns_ttl description"
+// @Param        GlobalMaxMbps json        int    true "global_max_mbps description"
+// @Param         GlobalMaxTps json        int    true "global_max_tps description"
+// @Param             LongDesc json     string    true "long_desc description"
+// @Param            LongDesc1 json     string    true "long_desc_1 description"
+// @Param            LongDesc2 json     string    true "long_desc_2 description"
+// @Param        MaxDnsAnswers json        int    true "max_dns_answers description"
+// @Param              InfoUrl json     string    true "info_url description"
+// @Param              MissLat json    float64    true "miss_lat description"
+// @Param             MissLong json    float64    true "miss_long description"
+// @Param            CheckPath json     string    true "check_path description"
+// @Param             Protocol json        int    true "protocol description"
+// @Param        SslKeyVersion json        int    true "ssl_key_version description"
+// @Param   Ipv6RoutingEnabled json        int    true "ipv6_routing_enabled description"
+// @Param RangeRequestHandling json        int    true "range_request_handling description"
+// @Param    EdgeHeaderRewrite json     string    true "edge_header_rewrite description"
+// @Param         OriginShield json     string    true "origin_shield description"
+// @Param     MidHeaderRewrite json     string    true "mid_header_rewrite description"
+// @Param           RegexRemap json     string    true "regex_remap description"
+// @Param             Cacheurl json     string    true "cacheurl description"
+// @Param            RemapText json     string    true "remap_text description"
+// @Param      MultiSiteOrigin json        int    true "multi_site_origin description"
 // @Param          DisplayName json     string   false "display_name description"
-// @Param    TrResponseHeaders json null.String    true "tr_response_headers description"
-// @Param    InitialDispersion json   null.Int    true "initial_dispersion description"
-// @Param       DnsBypassCname json null.String    true "dns_bypass_cname description"
-// @Param     TrRequestHeaders json null.String    true "tr_request_headers description"
+// @Param    TrResponseHeaders json     string    true "tr_response_headers description"
+// @Param    InitialDispersion json        int    true "initial_dispersion description"
+// @Param       DnsBypassCname json     string    true "dns_bypass_cname description"
 // @Success 200 {object}    output_format.ApiWrapper
 // @Resource /api/2.0
 // @Router /api/2.0/deliveryservice [put]
 func putDeliveryservice(id int, payload []byte) (interface{}, error) {
-	var v Deliveryservice
-	err := json.Unmarshal(payload, &v)
-	v.Id = int64(id) // overwrite the id in the payload
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	v.LastUpdated = time.Now()
-	sqlString := "UPDATE deliveryservice SET "
-	sqlString += "xml_id = :xml_id"
-	sqlString += ",active = :active"
-	sqlString += ",dscp = :dscp"
-	sqlString += ",signed = :signed"
-	sqlString += ",qstring_ignore = :qstring_ignore"
-	sqlString += ",geo_limit = :geo_limit"
-	sqlString += ",http_bypass_fqdn = :http_bypass_fqdn"
-	sqlString += ",dns_bypass_ip = :dns_bypass_ip"
-	sqlString += ",dns_bypass_ip6 = :dns_bypass_ip6"
-	sqlString += ",dns_bypass_ttl = :dns_bypass_ttl"
-	sqlString += ",org_server_fqdn = :org_server_fqdn"
-	sqlString += ",type = :type"
-	sqlString += ",profile = :profile"
-	sqlString += ",cdn_id = :cdn_id"
-	sqlString += ",ccr_dns_ttl = :ccr_dns_ttl"
-	sqlString += ",global_max_mbps = :global_max_mbps"
-	sqlString += ",global_max_tps = :global_max_tps"
-	sqlString += ",long_desc = :long_desc"
-	sqlString += ",long_desc_1 = :long_desc_1"
-	sqlString += ",long_desc_2 = :long_desc_2"
-	sqlString += ",max_dns_answers = :max_dns_answers"
-	sqlString += ",info_url = :info_url"
-	sqlString += ",miss_lat = :miss_lat"
-	sqlString += ",miss_long = :miss_long"
-	sqlString += ",check_path = :check_path"
-	sqlString += ",last_updated = :last_updated"
-	sqlString += ",protocol = :protocol"
-	sqlString += ",ssl_key_version = :ssl_key_version"
-	sqlString += ",ipv6_routing_enabled = :ipv6_routing_enabled"
-	sqlString += ",range_request_handling = :range_request_handling"
-	sqlString += ",edge_header_rewrite = :edge_header_rewrite"
-	sqlString += ",origin_shield = :origin_shield"
-	sqlString += ",mid_header_rewrite = :mid_header_rewrite"
-	sqlString += ",regex_remap = :regex_remap"
-	sqlString += ",cacheurl = :cacheurl"
-	sqlString += ",remap_text = :remap_text"
-	sqlString += ",multi_site_origin = :multi_site_origin"
-	sqlString += ",display_name = :display_name"
-	sqlString += ",tr_response_headers = :tr_response_headers"
-	sqlString += ",initial_dispersion = :initial_dispersion"
-	sqlString += ",dns_bypass_cname = :dns_bypass_cname"
-	sqlString += ",tr_request_headers = :tr_request_headers"
-	sqlString += " WHERE id=:id"
-	result, err := db.GlobalDB.NamedExec(sqlString, v)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	return result, err
+	return genericPut(id, payload, "deliveryservice", (*Deliveryservice)(nil))
 }
 
 // @Title delDeliveryserviceById
@@ -392,11 +218,5 @@ func putDeliveryservice(id int, payload []byte) (interface{}, error) {
 // @Resource /api/2.0
 // @Router /api/2.0/deliveryservice/{id} [delete]
 func delDeliveryservice(id int) (interface{}, error) {
-	arg := Deliveryservice{Id: int64(id)}
-	result, err := db.GlobalDB.NamedExec("DELETE FROM deliveryservice WHERE id=:id", arg)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	return result, err
+	return genericDelete(id, "deliveryservice")
 }
