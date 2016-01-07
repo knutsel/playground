@@ -31,8 +31,8 @@ var defaults = Configuration{
 	DbUser:     os.Args[1],
 	DbPassword: os.Args[2],
 	DbName:     os.Args[3],
-	DbServer:   os.Args[4],
-	DbPort:     os.Args[5],
+	DbServer:   "localhost",
+	DbPort:     "3306",
 	PkgName:    "api",
 	TagLabel:   "db",
 }
@@ -427,6 +427,12 @@ func goType(col *ColumnSchema) (string, string, error) {
 func main() {
 
 	config = defaults
+	if len(os.Args) > 4 {
+		config.DbServer = os.Args[4]
+	}
+	if len(os.Args) > 5 {
+		config.DbPort = os.Args[5]
+	}
 
 	columns, tables := getSchema()
 	fmt.Println(tables)
