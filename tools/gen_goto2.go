@@ -31,6 +31,8 @@ var defaults = Configuration{
 	DbUser:     os.Args[1],
 	DbPassword: os.Args[2],
 	DbName:     os.Args[3],
+	DbServer:   os.Args[4],
+	DbPort:     os.Args[5],
 	PkgName:    "api",
 	TagLabel:   "db",
 }
@@ -41,6 +43,8 @@ type Configuration struct {
 	DbUser     string `json:"db_user"`
 	DbPassword string `json:"db_password"`
 	DbName     string `json:"db_name"`
+	DbServer   string `json:"db_server"`
+	DbPort     string `json:"db_port"`
 	// PkgName gives name of the package using the stucts
 	PkgName string `json:"pkg_name"`
 	// TagLabel produces tags commonly used to match database field names with Go struct members
@@ -90,19 +94,16 @@ func writeFile(schemas []ColumnSchema, table string) (int, error) {
 
 	header := "package " + config.PkgName + "\n\n"
 	header += "import (\n"
-	header += "\"fmt\"\n"
 
 	sString := structString(schemas, table)
 
 	if strings.Contains(sString, "null.") {
 		header += "null \"gopkg.in/guregu/null.v3\"\n"
 	}
-	header += "\"github.com/Comcast/traffic_control/traffic_ops/goto2/db\"\n"
 	header += "_ \"github.com/Comcast/traffic_control/traffic_ops/goto2/output_format\" // needed for swagger\n"
 	if strings.Contains(sString, "time.") {
 		header += "\"time\"\n"
 	}
-	header += "\"encoding/json\"\n"
 	header += ")\n\n"
 
 	hString := handleString(schemas, table)
@@ -216,8 +217,10 @@ func genApiPutDocChangeLines(schemas []ColumnSchema, table string) string {
 }
 
 func handleString(schemas []ColumnSchema, table string) string {
-	idColumn := idCol(schemas, table)
-	updateLastUpdated := hasLastUpdated(schemas, table)
+	// TODO(make generic funcs take ID column as parameter?)
+	// TODO(make generic funcs take updateLastUpdated? Right now, they check if the struct has the field 'LastUpdated'; is this ok? What about passing the struct field name?)
+	// idColumn := idCol(schemas, table)
+	// updateLastUpdated := hasLastUpdated(schemas, table)
 
 	out := "func handle" + formatName(table) + "(method string, id int, payload []byte)(interface{}, error) {\n"
 	out += "    if method == \"GET\" {\n"
@@ -248,16 +251,7 @@ func handleString(schemas []ColumnSchema, table string) string {
 	out += "// @Resource /api/2.0\n"
 	out += "// @Router /api/2.0/" + table + "/{id} [get]\n"
 	out += "func get" + formatName(table) + "ById(id int) (interface{}, error) {\n"
-	out += "    ret := []" + formatName(table) + "{}\n"
-	out += "    arg := " + formatName(table) + "{" + formatName(idColumn) + ": int64(id)}\n"
-	out += "    nstmt, err := db.GlobalDB.PrepareNamed(`select * from " + table + " where " + idColumn + "=:" + idColumn + "`)\n"
-	out += "    err = nstmt.Select(&ret, arg)\n"
-	out += "	if err != nil {\n"
-	out += "	    fmt.Println(err)\n"
-	out += "	    return nil, err\n"
-	out += "	}\n"
-	out += "    nstmt.Close()\n"
-	out += "	return ret, nil\n"
+	out += `    return genericGetById(id, "` + table + `", (*` + formatName(table) + `)(nil))` + "\n"
 	out += "}\n\n"
 
 	out += "// @Title get" + formatName(table) + "s\n"
@@ -267,14 +261,7 @@ func handleString(schemas []ColumnSchema, table string) string {
 	out += "// @Resource /api/2.0\n"
 	out += "// @Router /api/2.0/" + table + " [get]\n"
 	out += "func get" + formatName(table) + "s() (interface{}, error) {\n"
-	out += "    ret := []" + formatName(table) + "{}\n"
-	out += "	queryStr := \"select * from " + table + "\"\n"
-	out += "	err := db.GlobalDB.Select(&ret, queryStr)\n"
-	out += "	if err != nil {\n"
-	out += "	   fmt.Println(err)\n"
-	out += "	   return nil, err\n"
-	out += "	}\n"
-	out += "	return ret, nil\n"
+	out += `    return genericGet("` + table + `", (*` + formatName(table) + `)(nil))` + "\n"
 	out += "}\n\n"
 
 	out += "// @Title post" + formatName(table) + "\n"
@@ -285,18 +272,7 @@ func handleString(schemas []ColumnSchema, table string) string {
 	out += "// @Resource /api/2.0\n"
 	out += "// @Router /api/2.0/" + table + " [post]\n"
 	out += "func post" + formatName(table) + "(payload []byte) (interface{}, error) {\n"
-	out += "	var v " + formatName(table) + "\n"
-	out += "	err := json.Unmarshal(payload, &v)\n"
-	out += "	if err != nil {\n"
-	out += "		fmt.Println(err)\n"
-	out += "	}\n"
-	out += genInsertVarLines(schemas, table)
-	out += "    result, err := db.GlobalDB.NamedExec(sqlString, v)\n"
-	out += "    if err != nil {\n"
-	out += "        fmt.Println(err)\n"
-	out += "    	return nil, err\n"
-	out += "    }\n"
-	out += "    return result, err\n"
+	out += `    return genericPost(payload, "` + table + `", (*` + formatName(table) + `)(nil))` + "\n"
 	out += "}\n\n"
 
 	out += "// @Title put" + formatName(table) + "\n"
@@ -307,23 +283,7 @@ func handleString(schemas []ColumnSchema, table string) string {
 	out += "// @Resource /api/2.0\n"
 	out += "// @Router /api/2.0/" + table + " [put]\n"
 	out += "func put" + formatName(table) + "(id int, payload []byte) (interface{}, error) {\n"
-	out += "    var v " + formatName(table) + "\n"
-	out += "    err := json.Unmarshal(payload, &v)\n"
-	out += "    v." + formatName(idColumn) + "= int64(id) // overwrite the id in the payload\n"
-	out += "    if err != nil {\n"
-	out += "    	fmt.Println(err)\n"
-	out += "    	return nil, err\n"
-	out += "    }\n"
-	if updateLastUpdated {
-		out += "    v.LastUpdated = time.Now()\n"
-	}
-	out += genUpdateVarLines(schemas, table, idColumn)
-	out += "    result, err := db.GlobalDB.NamedExec(sqlString, v)\n"
-	out += "    if err != nil {\n"
-	out += "    	fmt.Println(err)\n"
-	out += "    	return nil, err\n"
-	out += "    }\n"
-	out += "    return result, err\n"
+	out += `    return genericPut(id, payload, "` + table + `", (*` + formatName(table) + `)(nil))` + "\n"
 	out += "}\n\n"
 
 	out += "// @Title del" + formatName(table) + "ById\n"
@@ -334,13 +294,7 @@ func handleString(schemas []ColumnSchema, table string) string {
 	out += "// @Resource /api/2.0\n"
 	out += "// @Router /api/2.0/" + table + "/{id} [delete]\n"
 	out += "func del" + formatName(table) + "(id int) (interface{}, error) {\n"
-	out += "    arg := " + formatName(table) + "{" + formatName(idColumn) + ": int64(id)}\n"
-	out += "    result, err := db.GlobalDB.NamedExec(\"DELETE FROM " + table + " WHERE id=:id\", arg)\n"
-	out += "    if err != nil {\n"
-	out += "    	fmt.Println(err)\n"
-	out += "    	return nil, err\n"
-	out += "    }\n"
-	out += "    return result, err\n"
+	out += `    return genericDelete(id, "` + table + `")` + "\n"
 	out += "}\n\n"
 	return out
 }
@@ -368,8 +322,10 @@ func structString(schemas []ColumnSchema, table string) string {
 }
 
 func getSchema() ([]ColumnSchema, []string) {
-	conn, err := sql.Open("mysql", config.DbUser+":"+config.DbPassword+"@/information_schema")
+	connString := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?parseTime=True", config.DbUser, config.DbPassword, config.DbServer, config.DbPort, "information_schema")
+	conn, err := sql.Open("mysql", connString)
 	if err != nil {
+		fmt.Println(err)
 		log.Fatal(err)
 	}
 	defer conn.Close()

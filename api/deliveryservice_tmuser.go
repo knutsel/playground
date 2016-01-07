@@ -18,9 +18,6 @@
 package api
 
 import (
-	"encoding/json"
-	"fmt"
-	"github.com/Comcast/traffic_control/traffic_ops/goto2/db"
 	_ "github.com/Comcast/traffic_control/traffic_ops/goto2/output_format" // needed for swagger
 	"time"
 )
@@ -60,16 +57,7 @@ func getDeliveryserviceTmuser(id int) (interface{}, error) {
 // @Resource /api/2.0
 // @Router /api/2.0/deliveryservice_tmuser/{id} [get]
 func getDeliveryserviceTmuserById(id int) (interface{}, error) {
-	ret := []DeliveryserviceTmuser{}
-	arg := DeliveryserviceTmuser{Deliveryservice: int64(id)}
-	nstmt, err := db.GlobalDB.PrepareNamed(`select * from deliveryservice_tmuser where deliveryservice=:deliveryservice`)
-	err = nstmt.Select(&ret, arg)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	nstmt.Close()
-	return ret, nil
+	return genericGetById(id, "deliveryservice_tmuser", (*DeliveryserviceTmuser)(nil))
 }
 
 // @Title getDeliveryserviceTmusers
@@ -79,14 +67,7 @@ func getDeliveryserviceTmuserById(id int) (interface{}, error) {
 // @Resource /api/2.0
 // @Router /api/2.0/deliveryservice_tmuser [get]
 func getDeliveryserviceTmusers() (interface{}, error) {
-	ret := []DeliveryserviceTmuser{}
-	queryStr := "select * from deliveryservice_tmuser"
-	err := db.GlobalDB.Select(&ret, queryStr)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	return ret, nil
+	return genericGet("deliveryservice_tmuser", (*DeliveryserviceTmuser)(nil))
 }
 
 // @Title postDeliveryserviceTmuser
@@ -98,24 +79,7 @@ func getDeliveryserviceTmusers() (interface{}, error) {
 // @Resource /api/2.0
 // @Router /api/2.0/deliveryservice_tmuser [post]
 func postDeliveryserviceTmuser(payload []byte) (interface{}, error) {
-	var v DeliveryserviceTmuser
-	err := json.Unmarshal(payload, &v)
-	if err != nil {
-		fmt.Println(err)
-	}
-	sqlString := "INSERT INTO deliveryservice_tmuser("
-	sqlString += "deliveryservice"
-	sqlString += ",tm_user_id"
-	sqlString += ") VALUES ("
-	sqlString += ":deliveryservice"
-	sqlString += ",:tm_user_id"
-	sqlString += ")"
-	result, err := db.GlobalDB.NamedExec(sqlString, v)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	return result, err
+	return genericPost(payload, "deliveryservice_tmuser", (*DeliveryserviceTmuser)(nil))
 }
 
 // @Title putDeliveryserviceTmuser
@@ -127,25 +91,7 @@ func postDeliveryserviceTmuser(payload []byte) (interface{}, error) {
 // @Resource /api/2.0
 // @Router /api/2.0/deliveryservice_tmuser [put]
 func putDeliveryserviceTmuser(id int, payload []byte) (interface{}, error) {
-	var v DeliveryserviceTmuser
-	err := json.Unmarshal(payload, &v)
-	v.Deliveryservice = int64(id) // overwrite the id in the payload
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	v.LastUpdated = time.Now()
-	sqlString := "UPDATE deliveryservice_tmuser SET "
-	sqlString += "deliveryservice = :deliveryservice"
-	sqlString += ",tm_user_id = :tm_user_id"
-	sqlString += ",last_updated = :last_updated"
-	sqlString += " WHERE deliveryservice=:deliveryservice"
-	result, err := db.GlobalDB.NamedExec(sqlString, v)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	return result, err
+	return genericPut(id, payload, "deliveryservice_tmuser", (*DeliveryserviceTmuser)(nil))
 }
 
 // @Title delDeliveryserviceTmuserById
@@ -156,11 +102,5 @@ func putDeliveryserviceTmuser(id int, payload []byte) (interface{}, error) {
 // @Resource /api/2.0
 // @Router /api/2.0/deliveryservice_tmuser/{id} [delete]
 func delDeliveryserviceTmuser(id int) (interface{}, error) {
-	arg := DeliveryserviceTmuser{Deliveryservice: int64(id)}
-	result, err := db.GlobalDB.NamedExec("DELETE FROM deliveryservice_tmuser WHERE id=:id", arg)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	return result, err
+	return genericDelete(id, "deliveryservice_tmuser")
 }

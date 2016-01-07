@@ -18,9 +18,6 @@
 package api
 
 import (
-	"encoding/json"
-	"fmt"
-	"github.com/Comcast/traffic_control/traffic_ops/goto2/db"
 	_ "github.com/Comcast/traffic_control/traffic_ops/goto2/output_format" // needed for swagger
 	"time"
 )
@@ -62,16 +59,7 @@ func getHwinfo(id int) (interface{}, error) {
 // @Resource /api/2.0
 // @Router /api/2.0/hwinfo/{id} [get]
 func getHwinfoById(id int) (interface{}, error) {
-	ret := []Hwinfo{}
-	arg := Hwinfo{Id: int64(id)}
-	nstmt, err := db.GlobalDB.PrepareNamed(`select * from hwinfo where id=:id`)
-	err = nstmt.Select(&ret, arg)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	nstmt.Close()
-	return ret, nil
+	return genericGetById(id, "hwinfo", (*Hwinfo)(nil))
 }
 
 // @Title getHwinfos
@@ -81,14 +69,7 @@ func getHwinfoById(id int) (interface{}, error) {
 // @Resource /api/2.0
 // @Router /api/2.0/hwinfo [get]
 func getHwinfos() (interface{}, error) {
-	ret := []Hwinfo{}
-	queryStr := "select * from hwinfo"
-	err := db.GlobalDB.Select(&ret, queryStr)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	return ret, nil
+	return genericGet("hwinfo", (*Hwinfo)(nil))
 }
 
 // @Title postHwinfo
@@ -101,26 +82,7 @@ func getHwinfos() (interface{}, error) {
 // @Resource /api/2.0
 // @Router /api/2.0/hwinfo [post]
 func postHwinfo(payload []byte) (interface{}, error) {
-	var v Hwinfo
-	err := json.Unmarshal(payload, &v)
-	if err != nil {
-		fmt.Println(err)
-	}
-	sqlString := "INSERT INTO hwinfo("
-	sqlString += "serverid"
-	sqlString += ",description"
-	sqlString += ",val"
-	sqlString += ") VALUES ("
-	sqlString += ":serverid"
-	sqlString += ",:description"
-	sqlString += ",:val"
-	sqlString += ")"
-	result, err := db.GlobalDB.NamedExec(sqlString, v)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	return result, err
+	return genericPost(payload, "hwinfo", (*Hwinfo)(nil))
 }
 
 // @Title putHwinfo
@@ -133,26 +95,7 @@ func postHwinfo(payload []byte) (interface{}, error) {
 // @Resource /api/2.0
 // @Router /api/2.0/hwinfo [put]
 func putHwinfo(id int, payload []byte) (interface{}, error) {
-	var v Hwinfo
-	err := json.Unmarshal(payload, &v)
-	v.Id = int64(id) // overwrite the id in the payload
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	v.LastUpdated = time.Now()
-	sqlString := "UPDATE hwinfo SET "
-	sqlString += "serverid = :serverid"
-	sqlString += ",description = :description"
-	sqlString += ",val = :val"
-	sqlString += ",last_updated = :last_updated"
-	sqlString += " WHERE id=:id"
-	result, err := db.GlobalDB.NamedExec(sqlString, v)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	return result, err
+	return genericPut(id, payload, "hwinfo", (*Hwinfo)(nil))
 }
 
 // @Title delHwinfoById
@@ -163,11 +106,5 @@ func putHwinfo(id int, payload []byte) (interface{}, error) {
 // @Resource /api/2.0
 // @Router /api/2.0/hwinfo/{id} [delete]
 func delHwinfo(id int) (interface{}, error) {
-	arg := Hwinfo{Id: int64(id)}
-	result, err := db.GlobalDB.NamedExec("DELETE FROM hwinfo WHERE id=:id", arg)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	return result, err
+	return genericDelete(id, "hwinfo")
 }

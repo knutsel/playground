@@ -18,9 +18,6 @@
 package api
 
 import (
-	"encoding/json"
-	"fmt"
-	"github.com/Comcast/traffic_control/traffic_ops/goto2/db"
 	_ "github.com/Comcast/traffic_control/traffic_ops/goto2/output_format" // needed for swagger
 	"time"
 )
@@ -61,16 +58,7 @@ func getAsn(id int) (interface{}, error) {
 // @Resource /api/2.0
 // @Router /api/2.0/asn/{id} [get]
 func getAsnById(id int) (interface{}, error) {
-	ret := []Asn{}
-	arg := Asn{Id: int64(id)}
-	nstmt, err := db.GlobalDB.PrepareNamed(`select * from asn where id=:id`)
-	err = nstmt.Select(&ret, arg)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	nstmt.Close()
-	return ret, nil
+	return genericGetById(id, "asn", (*Asn)(nil))
 }
 
 // @Title getAsns
@@ -80,14 +68,7 @@ func getAsnById(id int) (interface{}, error) {
 // @Resource /api/2.0
 // @Router /api/2.0/asn [get]
 func getAsns() (interface{}, error) {
-	ret := []Asn{}
-	queryStr := "select * from asn"
-	err := db.GlobalDB.Select(&ret, queryStr)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	return ret, nil
+	return genericGet("asn", (*Asn)(nil))
 }
 
 // @Title postAsn
@@ -99,24 +80,7 @@ func getAsns() (interface{}, error) {
 // @Resource /api/2.0
 // @Router /api/2.0/asn [post]
 func postAsn(payload []byte) (interface{}, error) {
-	var v Asn
-	err := json.Unmarshal(payload, &v)
-	if err != nil {
-		fmt.Println(err)
-	}
-	sqlString := "INSERT INTO asn("
-	sqlString += "asn"
-	sqlString += ",cachegroup"
-	sqlString += ") VALUES ("
-	sqlString += ":asn"
-	sqlString += ",:cachegroup"
-	sqlString += ")"
-	result, err := db.GlobalDB.NamedExec(sqlString, v)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	return result, err
+	return genericPost(payload, "asn", (*Asn)(nil))
 }
 
 // @Title putAsn
@@ -128,25 +92,7 @@ func postAsn(payload []byte) (interface{}, error) {
 // @Resource /api/2.0
 // @Router /api/2.0/asn [put]
 func putAsn(id int, payload []byte) (interface{}, error) {
-	var v Asn
-	err := json.Unmarshal(payload, &v)
-	v.Id = int64(id) // overwrite the id in the payload
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	v.LastUpdated = time.Now()
-	sqlString := "UPDATE asn SET "
-	sqlString += "asn = :asn"
-	sqlString += ",cachegroup = :cachegroup"
-	sqlString += ",last_updated = :last_updated"
-	sqlString += " WHERE id=:id"
-	result, err := db.GlobalDB.NamedExec(sqlString, v)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	return result, err
+	return genericPut(id, payload, "asn", (*Asn)(nil))
 }
 
 // @Title delAsnById
@@ -157,11 +103,5 @@ func putAsn(id int, payload []byte) (interface{}, error) {
 // @Resource /api/2.0
 // @Router /api/2.0/asn/{id} [delete]
 func delAsn(id int) (interface{}, error) {
-	arg := Asn{Id: int64(id)}
-	result, err := db.GlobalDB.NamedExec("DELETE FROM asn WHERE id=:id", arg)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	return result, err
+	return genericDelete(id, "asn")
 }

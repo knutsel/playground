@@ -18,9 +18,6 @@
 package api
 
 import (
-	"encoding/json"
-	"fmt"
-	"github.com/Comcast/traffic_control/traffic_ops/goto2/db"
 	_ "github.com/Comcast/traffic_control/traffic_ops/goto2/output_format" // needed for swagger
 	"time"
 )
@@ -60,16 +57,7 @@ func getDivision(id int) (interface{}, error) {
 // @Resource /api/2.0
 // @Router /api/2.0/division/{id} [get]
 func getDivisionById(id int) (interface{}, error) {
-	ret := []Division{}
-	arg := Division{Id: int64(id)}
-	nstmt, err := db.GlobalDB.PrepareNamed(`select * from division where id=:id`)
-	err = nstmt.Select(&ret, arg)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	nstmt.Close()
-	return ret, nil
+	return genericGetById(id, "division", (*Division)(nil))
 }
 
 // @Title getDivisions
@@ -79,14 +67,7 @@ func getDivisionById(id int) (interface{}, error) {
 // @Resource /api/2.0
 // @Router /api/2.0/division [get]
 func getDivisions() (interface{}, error) {
-	ret := []Division{}
-	queryStr := "select * from division"
-	err := db.GlobalDB.Select(&ret, queryStr)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	return ret, nil
+	return genericGet("division", (*Division)(nil))
 }
 
 // @Title postDivision
@@ -97,22 +78,7 @@ func getDivisions() (interface{}, error) {
 // @Resource /api/2.0
 // @Router /api/2.0/division [post]
 func postDivision(payload []byte) (interface{}, error) {
-	var v Division
-	err := json.Unmarshal(payload, &v)
-	if err != nil {
-		fmt.Println(err)
-	}
-	sqlString := "INSERT INTO division("
-	sqlString += "name"
-	sqlString += ") VALUES ("
-	sqlString += ":name"
-	sqlString += ")"
-	result, err := db.GlobalDB.NamedExec(sqlString, v)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	return result, err
+	return genericPost(payload, "division", (*Division)(nil))
 }
 
 // @Title putDivision
@@ -123,24 +89,7 @@ func postDivision(payload []byte) (interface{}, error) {
 // @Resource /api/2.0
 // @Router /api/2.0/division [put]
 func putDivision(id int, payload []byte) (interface{}, error) {
-	var v Division
-	err := json.Unmarshal(payload, &v)
-	v.Id = int64(id) // overwrite the id in the payload
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	v.LastUpdated = time.Now()
-	sqlString := "UPDATE division SET "
-	sqlString += "name = :name"
-	sqlString += ",last_updated = :last_updated"
-	sqlString += " WHERE id=:id"
-	result, err := db.GlobalDB.NamedExec(sqlString, v)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	return result, err
+	return genericPut(id, payload, "division", (*Division)(nil))
 }
 
 // @Title delDivisionById
@@ -151,11 +100,5 @@ func putDivision(id int, payload []byte) (interface{}, error) {
 // @Resource /api/2.0
 // @Router /api/2.0/division/{id} [delete]
 func delDivision(id int) (interface{}, error) {
-	arg := Division{Id: int64(id)}
-	result, err := db.GlobalDB.NamedExec("DELETE FROM division WHERE id=:id", arg)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	return result, err
+	return genericDelete(id, "division")
 }

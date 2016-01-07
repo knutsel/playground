@@ -18,9 +18,6 @@
 package api
 
 import (
-	"encoding/json"
-	"fmt"
-	"github.com/Comcast/traffic_control/traffic_ops/goto2/db"
 	_ "github.com/Comcast/traffic_control/traffic_ops/goto2/output_format" // needed for swagger
 	null "gopkg.in/guregu/null.v3"
 	"time"
@@ -72,16 +69,7 @@ func getJob(id int) (interface{}, error) {
 // @Resource /api/2.0
 // @Router /api/2.0/job/{id} [get]
 func getJobById(id int) (interface{}, error) {
-	ret := []Job{}
-	arg := Job{Id: int64(id)}
-	nstmt, err := db.GlobalDB.PrepareNamed(`select * from job where id=:id`)
-	err = nstmt.Select(&ret, arg)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	nstmt.Close()
-	return ret, nil
+	return genericGetById(id, "job", (*Job)(nil))
 }
 
 // @Title getJobs
@@ -91,14 +79,7 @@ func getJobById(id int) (interface{}, error) {
 // @Resource /api/2.0
 // @Router /api/2.0/job [get]
 func getJobs() (interface{}, error) {
-	ret := []Job{}
-	queryStr := "select * from job"
-	err := db.GlobalDB.Select(&ret, queryStr)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	return ret, nil
+	return genericGet("job", (*Job)(nil))
 }
 
 // @Title postJob
@@ -120,94 +101,29 @@ func getJobs() (interface{}, error) {
 // @Resource /api/2.0
 // @Router /api/2.0/job [post]
 func postJob(payload []byte) (interface{}, error) {
-	var v Job
-	err := json.Unmarshal(payload, &v)
-	if err != nil {
-		fmt.Println(err)
-	}
-	sqlString := "INSERT INTO job("
-	sqlString += "agent"
-	sqlString += ",object_type"
-	sqlString += ",object_name"
-	sqlString += ",keyword"
-	sqlString += ",parameters"
-	sqlString += ",asset_url"
-	sqlString += ",asset_type"
-	sqlString += ",status"
-	sqlString += ",start_time"
-	sqlString += ",entered_time"
-	sqlString += ",job_user"
-	sqlString += ",job_deliveryservice"
-	sqlString += ") VALUES ("
-	sqlString += ":agent"
-	sqlString += ",:object_type"
-	sqlString += ",:object_name"
-	sqlString += ",:keyword"
-	sqlString += ",:parameters"
-	sqlString += ",:asset_url"
-	sqlString += ",:asset_type"
-	sqlString += ",:status"
-	sqlString += ",:start_time"
-	sqlString += ",:entered_time"
-	sqlString += ",:job_user"
-	sqlString += ",:job_deliveryservice"
-	sqlString += ")"
-	result, err := db.GlobalDB.NamedExec(sqlString, v)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	return result, err
+	return genericPost(payload, "job", (*Job)(nil))
 }
 
 // @Title putJob
 // @Description modify an existing jobentry
 // @Accept  application/json
-// @Param                Agent json   null.Int    true "agent description"
-// @Param           ObjectType json null.String    true "object_type description"
-// @Param           ObjectName json null.String    true "object_name description"
+// @Param                Agent json        int    true "agent description"
+// @Param           ObjectType json     string    true "object_type description"
+// @Param           ObjectName json     string    true "object_name description"
 // @Param              Keyword json     string   false "keyword description"
-// @Param           Parameters json null.String    true "parameters description"
+// @Param           Parameters json     string    true "parameters description"
 // @Param             AssetUrl json     string   false "asset_url description"
 // @Param            AssetType json     string   false "asset_type description"
 // @Param               Status json      int64   false "status description"
 // @Param            StartTime json  time.Time   false "start_time description"
 // @Param          EnteredTime json  time.Time   false "entered_time description"
 // @Param              JobUser json      int64   false "job_user description"
-// @Param   JobDeliveryservice json   null.Int    true "job_deliveryservice description"
+// @Param   JobDeliveryservice json        int    true "job_deliveryservice description"
 // @Success 200 {object}    output_format.ApiWrapper
 // @Resource /api/2.0
 // @Router /api/2.0/job [put]
 func putJob(id int, payload []byte) (interface{}, error) {
-	var v Job
-	err := json.Unmarshal(payload, &v)
-	v.Id = int64(id) // overwrite the id in the payload
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	v.LastUpdated = time.Now()
-	sqlString := "UPDATE job SET "
-	sqlString += "agent = :agent"
-	sqlString += ",object_type = :object_type"
-	sqlString += ",object_name = :object_name"
-	sqlString += ",keyword = :keyword"
-	sqlString += ",parameters = :parameters"
-	sqlString += ",asset_url = :asset_url"
-	sqlString += ",asset_type = :asset_type"
-	sqlString += ",status = :status"
-	sqlString += ",start_time = :start_time"
-	sqlString += ",entered_time = :entered_time"
-	sqlString += ",job_user = :job_user"
-	sqlString += ",last_updated = :last_updated"
-	sqlString += ",job_deliveryservice = :job_deliveryservice"
-	sqlString += " WHERE id=:id"
-	result, err := db.GlobalDB.NamedExec(sqlString, v)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	return result, err
+	return genericPut(id, payload, "job", (*Job)(nil))
 }
 
 // @Title delJobById
@@ -218,11 +134,5 @@ func putJob(id int, payload []byte) (interface{}, error) {
 // @Resource /api/2.0
 // @Router /api/2.0/job/{id} [delete]
 func delJob(id int) (interface{}, error) {
-	arg := Job{Id: int64(id)}
-	result, err := db.GlobalDB.NamedExec("DELETE FROM job WHERE id=:id", arg)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	return result, err
+	return genericDelete(id, "job")
 }

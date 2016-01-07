@@ -18,9 +18,6 @@
 package api
 
 import (
-	"encoding/json"
-	"fmt"
-	"github.com/Comcast/traffic_control/traffic_ops/goto2/db"
 	_ "github.com/Comcast/traffic_control/traffic_ops/goto2/output_format" // needed for swagger
 	"time"
 )
@@ -60,16 +57,7 @@ func getCachegroupParameter(id int) (interface{}, error) {
 // @Resource /api/2.0
 // @Router /api/2.0/cachegroup_parameter/{id} [get]
 func getCachegroupParameterById(id int) (interface{}, error) {
-	ret := []CachegroupParameter{}
-	arg := CachegroupParameter{Cachegroup: int64(id)}
-	nstmt, err := db.GlobalDB.PrepareNamed(`select * from cachegroup_parameter where cachegroup=:cachegroup`)
-	err = nstmt.Select(&ret, arg)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	nstmt.Close()
-	return ret, nil
+	return genericGetById(id, "cachegroup_parameter", (*CachegroupParameter)(nil))
 }
 
 // @Title getCachegroupParameters
@@ -79,14 +67,7 @@ func getCachegroupParameterById(id int) (interface{}, error) {
 // @Resource /api/2.0
 // @Router /api/2.0/cachegroup_parameter [get]
 func getCachegroupParameters() (interface{}, error) {
-	ret := []CachegroupParameter{}
-	queryStr := "select * from cachegroup_parameter"
-	err := db.GlobalDB.Select(&ret, queryStr)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	return ret, nil
+	return genericGet("cachegroup_parameter", (*CachegroupParameter)(nil))
 }
 
 // @Title postCachegroupParameter
@@ -98,24 +79,7 @@ func getCachegroupParameters() (interface{}, error) {
 // @Resource /api/2.0
 // @Router /api/2.0/cachegroup_parameter [post]
 func postCachegroupParameter(payload []byte) (interface{}, error) {
-	var v CachegroupParameter
-	err := json.Unmarshal(payload, &v)
-	if err != nil {
-		fmt.Println(err)
-	}
-	sqlString := "INSERT INTO cachegroup_parameter("
-	sqlString += "cachegroup"
-	sqlString += ",parameter"
-	sqlString += ") VALUES ("
-	sqlString += ":cachegroup"
-	sqlString += ",:parameter"
-	sqlString += ")"
-	result, err := db.GlobalDB.NamedExec(sqlString, v)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	return result, err
+	return genericPost(payload, "cachegroup_parameter", (*CachegroupParameter)(nil))
 }
 
 // @Title putCachegroupParameter
@@ -127,25 +91,7 @@ func postCachegroupParameter(payload []byte) (interface{}, error) {
 // @Resource /api/2.0
 // @Router /api/2.0/cachegroup_parameter [put]
 func putCachegroupParameter(id int, payload []byte) (interface{}, error) {
-	var v CachegroupParameter
-	err := json.Unmarshal(payload, &v)
-	v.Cachegroup = int64(id) // overwrite the id in the payload
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	v.LastUpdated = time.Now()
-	sqlString := "UPDATE cachegroup_parameter SET "
-	sqlString += "cachegroup = :cachegroup"
-	sqlString += ",parameter = :parameter"
-	sqlString += ",last_updated = :last_updated"
-	sqlString += " WHERE cachegroup=:cachegroup"
-	result, err := db.GlobalDB.NamedExec(sqlString, v)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	return result, err
+	return genericPut(id, payload, "cachegroup_parameter", (*CachegroupParameter)(nil))
 }
 
 // @Title delCachegroupParameterById
@@ -156,11 +102,5 @@ func putCachegroupParameter(id int, payload []byte) (interface{}, error) {
 // @Resource /api/2.0
 // @Router /api/2.0/cachegroup_parameter/{id} [delete]
 func delCachegroupParameter(id int) (interface{}, error) {
-	arg := CachegroupParameter{Cachegroup: int64(id)}
-	result, err := db.GlobalDB.NamedExec("DELETE FROM cachegroup_parameter WHERE id=:id", arg)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	return result, err
+	return genericDelete(id, "cachegroup_parameter")
 }

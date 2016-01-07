@@ -18,9 +18,6 @@
 package api
 
 import (
-	"encoding/json"
-	"fmt"
-	"github.com/Comcast/traffic_control/traffic_ops/goto2/db"
 	_ "github.com/Comcast/traffic_control/traffic_ops/goto2/output_format" // needed for swagger
 	null "gopkg.in/guregu/null.v3"
 )
@@ -60,16 +57,7 @@ func getDeliveryserviceRegex(id int) (interface{}, error) {
 // @Resource /api/2.0
 // @Router /api/2.0/deliveryservice_regex/{id} [get]
 func getDeliveryserviceRegexById(id int) (interface{}, error) {
-	ret := []DeliveryserviceRegex{}
-	arg := DeliveryserviceRegex{Deliveryservice: int64(id)}
-	nstmt, err := db.GlobalDB.PrepareNamed(`select * from deliveryservice_regex where deliveryservice=:deliveryservice`)
-	err = nstmt.Select(&ret, arg)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	nstmt.Close()
-	return ret, nil
+	return genericGetById(id, "deliveryservice_regex", (*DeliveryserviceRegex)(nil))
 }
 
 // @Title getDeliveryserviceRegexs
@@ -79,14 +67,7 @@ func getDeliveryserviceRegexById(id int) (interface{}, error) {
 // @Resource /api/2.0
 // @Router /api/2.0/deliveryservice_regex [get]
 func getDeliveryserviceRegexs() (interface{}, error) {
-	ret := []DeliveryserviceRegex{}
-	queryStr := "select * from deliveryservice_regex"
-	err := db.GlobalDB.Select(&ret, queryStr)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	return ret, nil
+	return genericGet("deliveryservice_regex", (*DeliveryserviceRegex)(nil))
 }
 
 // @Title postDeliveryserviceRegex
@@ -99,26 +80,7 @@ func getDeliveryserviceRegexs() (interface{}, error) {
 // @Resource /api/2.0
 // @Router /api/2.0/deliveryservice_regex [post]
 func postDeliveryserviceRegex(payload []byte) (interface{}, error) {
-	var v DeliveryserviceRegex
-	err := json.Unmarshal(payload, &v)
-	if err != nil {
-		fmt.Println(err)
-	}
-	sqlString := "INSERT INTO deliveryservice_regex("
-	sqlString += "deliveryservice"
-	sqlString += ",regex"
-	sqlString += ",set_number"
-	sqlString += ") VALUES ("
-	sqlString += ":deliveryservice"
-	sqlString += ",:regex"
-	sqlString += ",:set_number"
-	sqlString += ")"
-	result, err := db.GlobalDB.NamedExec(sqlString, v)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	return result, err
+	return genericPost(payload, "deliveryservice_regex", (*DeliveryserviceRegex)(nil))
 }
 
 // @Title putDeliveryserviceRegex
@@ -126,29 +88,12 @@ func postDeliveryserviceRegex(payload []byte) (interface{}, error) {
 // @Accept  application/json
 // @Param      Deliveryservice json      int64   false "deliveryservice description"
 // @Param                Regex json      int64   false "regex description"
-// @Param            SetNumber json   null.Int    true "set_number description"
+// @Param            SetNumber json        int    true "set_number description"
 // @Success 200 {object}    output_format.ApiWrapper
 // @Resource /api/2.0
 // @Router /api/2.0/deliveryservice_regex [put]
 func putDeliveryserviceRegex(id int, payload []byte) (interface{}, error) {
-	var v DeliveryserviceRegex
-	err := json.Unmarshal(payload, &v)
-	v.Deliveryservice = int64(id) // overwrite the id in the payload
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	sqlString := "UPDATE deliveryservice_regex SET "
-	sqlString += "deliveryservice = :deliveryservice"
-	sqlString += ",regex = :regex"
-	sqlString += ",set_number = :set_number"
-	sqlString += " WHERE deliveryservice=:deliveryservice"
-	result, err := db.GlobalDB.NamedExec(sqlString, v)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	return result, err
+	return genericPut(id, payload, "deliveryservice_regex", (*DeliveryserviceRegex)(nil))
 }
 
 // @Title delDeliveryserviceRegexById
@@ -159,11 +104,5 @@ func putDeliveryserviceRegex(id int, payload []byte) (interface{}, error) {
 // @Resource /api/2.0
 // @Router /api/2.0/deliveryservice_regex/{id} [delete]
 func delDeliveryserviceRegex(id int) (interface{}, error) {
-	arg := DeliveryserviceRegex{Deliveryservice: int64(id)}
-	result, err := db.GlobalDB.NamedExec("DELETE FROM deliveryservice_regex WHERE id=:id", arg)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	return result, err
+	return genericDelete(id, "deliveryservice_regex")
 }

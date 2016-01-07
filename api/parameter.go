@@ -18,9 +18,6 @@
 package api
 
 import (
-	"encoding/json"
-	"fmt"
-	"github.com/Comcast/traffic_control/traffic_ops/goto2/db"
 	_ "github.com/Comcast/traffic_control/traffic_ops/goto2/output_format" // needed for swagger
 	"time"
 )
@@ -62,16 +59,7 @@ func getParameter(id int) (interface{}, error) {
 // @Resource /api/2.0
 // @Router /api/2.0/parameter/{id} [get]
 func getParameterById(id int) (interface{}, error) {
-	ret := []Parameter{}
-	arg := Parameter{Id: int64(id)}
-	nstmt, err := db.GlobalDB.PrepareNamed(`select * from parameter where id=:id`)
-	err = nstmt.Select(&ret, arg)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	nstmt.Close()
-	return ret, nil
+	return genericGetById(id, "parameter", (*Parameter)(nil))
 }
 
 // @Title getParameters
@@ -81,14 +69,7 @@ func getParameterById(id int) (interface{}, error) {
 // @Resource /api/2.0
 // @Router /api/2.0/parameter [get]
 func getParameters() (interface{}, error) {
-	ret := []Parameter{}
-	queryStr := "select * from parameter"
-	err := db.GlobalDB.Select(&ret, queryStr)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	return ret, nil
+	return genericGet("parameter", (*Parameter)(nil))
 }
 
 // @Title postParameter
@@ -101,26 +82,7 @@ func getParameters() (interface{}, error) {
 // @Resource /api/2.0
 // @Router /api/2.0/parameter [post]
 func postParameter(payload []byte) (interface{}, error) {
-	var v Parameter
-	err := json.Unmarshal(payload, &v)
-	if err != nil {
-		fmt.Println(err)
-	}
-	sqlString := "INSERT INTO parameter("
-	sqlString += "name"
-	sqlString += ",config_file"
-	sqlString += ",value"
-	sqlString += ") VALUES ("
-	sqlString += ":name"
-	sqlString += ",:config_file"
-	sqlString += ",:value"
-	sqlString += ")"
-	result, err := db.GlobalDB.NamedExec(sqlString, v)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	return result, err
+	return genericPost(payload, "parameter", (*Parameter)(nil))
 }
 
 // @Title putParameter
@@ -133,26 +95,7 @@ func postParameter(payload []byte) (interface{}, error) {
 // @Resource /api/2.0
 // @Router /api/2.0/parameter [put]
 func putParameter(id int, payload []byte) (interface{}, error) {
-	var v Parameter
-	err := json.Unmarshal(payload, &v)
-	v.Id = int64(id) // overwrite the id in the payload
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	v.LastUpdated = time.Now()
-	sqlString := "UPDATE parameter SET "
-	sqlString += "name = :name"
-	sqlString += ",config_file = :config_file"
-	sqlString += ",value = :value"
-	sqlString += ",last_updated = :last_updated"
-	sqlString += " WHERE id=:id"
-	result, err := db.GlobalDB.NamedExec(sqlString, v)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	return result, err
+	return genericPut(id, payload, "parameter", (*Parameter)(nil))
 }
 
 // @Title delParameterById
@@ -163,11 +106,5 @@ func putParameter(id int, payload []byte) (interface{}, error) {
 // @Resource /api/2.0
 // @Router /api/2.0/parameter/{id} [delete]
 func delParameter(id int) (interface{}, error) {
-	arg := Parameter{Id: int64(id)}
-	result, err := db.GlobalDB.NamedExec("DELETE FROM parameter WHERE id=:id", arg)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	return result, err
+	return genericDelete(id, "parameter")
 }

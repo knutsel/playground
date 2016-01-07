@@ -18,9 +18,6 @@
 package api
 
 import (
-	"encoding/json"
-	"fmt"
-	"github.com/Comcast/traffic_control/traffic_ops/goto2/db"
 	_ "github.com/Comcast/traffic_control/traffic_ops/goto2/output_format" // needed for swagger
 	null "gopkg.in/guregu/null.v3"
 )
@@ -61,16 +58,7 @@ func getRole(id int) (interface{}, error) {
 // @Resource /api/2.0
 // @Router /api/2.0/role/{id} [get]
 func getRoleById(id int) (interface{}, error) {
-	ret := []Role{}
-	arg := Role{Id: int64(id)}
-	nstmt, err := db.GlobalDB.PrepareNamed(`select * from role where id=:id`)
-	err = nstmt.Select(&ret, arg)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	nstmt.Close()
-	return ret, nil
+	return genericGetById(id, "role", (*Role)(nil))
 }
 
 // @Title getRoles
@@ -80,14 +68,7 @@ func getRoleById(id int) (interface{}, error) {
 // @Resource /api/2.0
 // @Router /api/2.0/role [get]
 func getRoles() (interface{}, error) {
-	ret := []Role{}
-	queryStr := "select * from role"
-	err := db.GlobalDB.Select(&ret, queryStr)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	return ret, nil
+	return genericGet("role", (*Role)(nil))
 }
 
 // @Title postRole
@@ -100,56 +81,20 @@ func getRoles() (interface{}, error) {
 // @Resource /api/2.0
 // @Router /api/2.0/role [post]
 func postRole(payload []byte) (interface{}, error) {
-	var v Role
-	err := json.Unmarshal(payload, &v)
-	if err != nil {
-		fmt.Println(err)
-	}
-	sqlString := "INSERT INTO role("
-	sqlString += "name"
-	sqlString += ",description"
-	sqlString += ",priv_level"
-	sqlString += ") VALUES ("
-	sqlString += ":name"
-	sqlString += ",:description"
-	sqlString += ",:priv_level"
-	sqlString += ")"
-	result, err := db.GlobalDB.NamedExec(sqlString, v)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	return result, err
+	return genericPost(payload, "role", (*Role)(nil))
 }
 
 // @Title putRole
 // @Description modify an existing roleentry
 // @Accept  application/json
 // @Param                 Name json     string   false "name description"
-// @Param          Description json null.String    true "description description"
+// @Param          Description json     string    true "description description"
 // @Param            PrivLevel json      int64   false "priv_level description"
 // @Success 200 {object}    output_format.ApiWrapper
 // @Resource /api/2.0
 // @Router /api/2.0/role [put]
 func putRole(id int, payload []byte) (interface{}, error) {
-	var v Role
-	err := json.Unmarshal(payload, &v)
-	v.Id = int64(id) // overwrite the id in the payload
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	sqlString := "UPDATE role SET "
-	sqlString += "name = :name"
-	sqlString += ",description = :description"
-	sqlString += ",priv_level = :priv_level"
-	sqlString += " WHERE id=:id"
-	result, err := db.GlobalDB.NamedExec(sqlString, v)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	return result, err
+	return genericPut(id, payload, "role", (*Role)(nil))
 }
 
 // @Title delRoleById
@@ -160,11 +105,5 @@ func putRole(id int, payload []byte) (interface{}, error) {
 // @Resource /api/2.0
 // @Router /api/2.0/role/{id} [delete]
 func delRole(id int) (interface{}, error) {
-	arg := Role{Id: int64(id)}
-	result, err := db.GlobalDB.NamedExec("DELETE FROM role WHERE id=:id", arg)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	return result, err
+	return genericDelete(id, "role")
 }
